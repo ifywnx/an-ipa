@@ -32,3 +32,10 @@ Bắt buộc: build/test/typecheck pass, dependency audit, secret scan toàn l�
 - Chứng từ quyền phân phối, privacy policy và quy trình xử lý yêu cầu xóa.
 
 Không gửi secrets trong chat hoặc commit. Cấu hình trực tiếp trong secret manager của dịch vụ.
+
+## Nhật ký cập nhật 2026-11-03
+
+- Storefront: trang danh mục, trang chi tiết và tìm kiếm/lọc đã có source. Thiếu kết nối dữ liệu thật và kiểm thử iPhone/Safari.
+- Auth/Admin: giao diện chỉ hiển thị trạng thái khóa, phân quyền domain tests; chưa có phiên người dùng và backend admin.
+- Database: migration nền tảng với RLS deny-by-default đã commit nhưng **chưa chạy trên project nào**. Cần Supabase test project và kiểm thử RLS thật trước áp dụng.
+- Không merge, không production deploy. Chỉ tiếp tục mở quyền khi kiểm tra end-to-end và security gate đạt.

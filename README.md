@@ -37,3 +37,11 @@ npm audit --omit=dev
 ## Git workflow
 
 Làm việc trên `codex/*`, review và CI trước merge. Không force push main. Chưa có workflow deploy; production bị chặn đến khi security gate trong kế hoạch được hoàn thành.
+
+## Phase 2 — cập nhật 2026-11-03
+
+- Danh mục /apps, trang chi tiết /apps/[slug], tìm kiếm và lọc danh mục; dữ liệu chỉ đọc từ Supabase REST public projection khi được cấu hình.
+- Giao diện /auth và /admin đang khóa; **không có đăng nhập, phân quyền hoặc thao tác quản trị thực**.
+- Migration SQL `supabase/migrations/20261103000100_phase2_core.sql` có RLS mặc định chặn. Chưa chạy trên Supabase; xem `docs/PHASE2_DATABASE.md`.
+- Chưa có IPA thực, Apple registration, signed URL, hoặc production deployment. Không đưa secret vào NEXT_PUBLIC_*.
+- Mọi commit được thực hiện trên nhánh phát triển và review qua PR #1; `main` không bị thay đổi.
