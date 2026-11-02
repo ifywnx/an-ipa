@@ -1,6 +1,6 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
-import {MAX_DIRECT_IPA_BYTES} from "@/modules/ipa/r2-presign";
+import {MAX_DIRECT_IPA_BYTES} from "@/modules/ipa/upload-policy";
 type Grant={uploadUrl?:string;headers?:Record<string,string>;error?:string};
 export function PrivateIpaUpload({file}:{file:File|null}){
  const [busy,setBusy]=useState(false),[progress,setProgress]=useState(0);

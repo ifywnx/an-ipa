@@ -1,7 +1,8 @@
 import {createHmac,createHash,randomUUID} from "node:crypto";
 
 /** R2 S3 Signature V4 single-part private PUT. No credentials reach browser. */
-export const MAX_DIRECT_IPA_BYTES=100*1024*1024; // larger files need multipart
+import {MAX_DIRECT_IPA_BYTES} from "./upload-policy";
+export {MAX_DIRECT_IPA_BYTES}; // larger files need multipart
 export interface PrivateR2 {
  accountId:string;bucket:string;accessKeyId:string;secretAccessKey:string;
 }
