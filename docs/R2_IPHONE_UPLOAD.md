@@ -29,3 +29,8 @@ References:
 - https://developers.cloudflare.com/r2/api/s3/presigned-urls/
 - https://developers.cloudflare.com/r2/objects/upload-objects/
 - https://developers.cloudflare.com/r2/buckets/cors/
+
+
+## Operator setup (Vietnamese)
+
+See [Tạo Cloudflare R2 riêng tư](R2_CLOUDFLARE_SETUP_VI.md) for Cloudflare Dashboard setup, exact Preview CORS origin, private API token scope, and safety gates.
