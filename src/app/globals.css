@@ -37,3 +37,8 @@
 
 .manual-udid-form label:not(.enroll-consent){display:block;font-weight:700;font-size:13px;margin:12px 0 8px}
 .manual-udid-form input:not([type=checkbox]){width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;color:var(--fg);background:var(--panel);font:inherit}
+
+.admin-auth-form{max-width:520px}.admin-auth-form>label{font-size:13px;font-weight:700;display:block;margin:10px 0 8px}
+.admin-auth-form>input{width:100%;border:1px solid var(--line);border-radius:12px;padding:14px;font:inherit;color:var(--fg);background:var(--panel);margin-bottom:14px}
+.admin-auth-submit{border:0;cursor:pointer;width:100%;margin:8px 0 12px}.admin-auth-submit:disabled{opacity:.6;cursor:not-allowed}
+.admin-topline{display:flex;gap:12px;justify-content:space-between;align-items:center}.admin-logout{cursor:pointer;background:transparent;color:var(--fg);font:inherit}

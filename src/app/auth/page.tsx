@@ -1,7 +1,18 @@
 import Link from "next/link";
-export default function AuthPage() { return <section className="reading">
-  <p className="eyebrow">TÀI KHOẢN</p><h1>Đăng nhập an toàn.</h1>
-  <p className="lead">Hệ thống xác thực đang được tích hợp. Đăng nhập và đăng ký chưa mở để tránh thu nhận tài khoản trước khi chính sách bảo mật và Supabase Auth được cấu hình.</p>
-  <div className="panel notice" role="status"><h2>Chưa mở đăng nhập</h2>
-  <p>Không nhập mật khẩu hoặc mã xác minh vào biểu mẫu không chính thức. Trang này chưa gửi dữ liệu đăng nhập tới bất kỳ dịch vụ nào.</p>
-  <Link href="/support">Thông tin hỗ trợ</Link></div></section>; }
+import {adminConfig} from "@/modules/auth/admin-server";
+import {AdminLoginForm} from "@/components/admin-login-form";
+export const dynamic="force-dynamic";
+export default function AuthPage(){
+ const available=!!adminConfig();
+ return <section className="reading admin-mobile">
+   <Link className="back-link" href="/">← AN IPA STORE</Link>
+   <p className="eyebrow">AN IPA STORE / KHU VỰC QUẢN TRỊ</p>
+   <h1>Đăng nhập Admin.</h1>
+   <p className="lead">Khách hàng không cần tài khoản để xem ứng dụng hay đăng ký thiết bị. Chỉ người quản trị mới dùng trang này.</p>
+   {available?<AdminLoginForm/>:<div className="panel notice" role="status">
+     <h2>Đăng nhập chưa được kích hoạt</h2>
+     <p>Để tránh thu mật khẩu trước khi bảo vệ server và WAF sẵn sàng, hệ thống hiện không nhận đăng nhập.</p>
+   </div>}
+   <p className="small-muted">Không chia sẻ P12, private key hoặc mật khẩu chứng chỉ LCSign tại đây.</p>
+ </section>;
+}
