@@ -14,7 +14,7 @@ export async function GET(req:NextRequest){
  const admin=await verifiedAdmin(session.accessToken,cfg);
  if(!admin)return Response.json({error:"UNAUTHORIZED"},{status:401,headers});
  const path=new URL("/rest/v1/ipa_upload_intakes",cfg.supabaseUrl);
- path.searchParams.set("select","id,filename,expected_bytes,state,created_at,expires_at");
+ path.searchParams.set("select","id,filename,expected_bytes,state,created_at,expires_at,scan_finished_at,scan_error,scan_report,sha256_verified");
  path.searchParams.set("requested_by","eq."+admin.id);
  path.searchParams.set("order","created_at.desc");
  path.searchParams.set("limit","20");

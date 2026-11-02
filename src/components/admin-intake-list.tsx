@@ -1,8 +1,11 @@
 "use client";
 import {useCallback,useEffect,useState} from "react";
-type Intake={id:string;filename:string;expected_bytes:number;state:string;created_at:string;expires_at:string};
+type ScanSummary={bundle_id?:string;version?:string;build?:string;profile_type?:string;ad_hoc_device_count?:number};
+type Intake={id:string;filename:string;expected_bytes:number;state:string;created_at:string;expires_at:string;scan_finished_at?:string|null;scan_error?:string|null;scan_report?:ScanSummary|null;sha256_verified?:string|null};
 const names:Record<string,string>={
  reserved:"Đã cấp lượt tải — chưa có xác nhận file",
+ uploaded_pending_scan:"Trình duyệt báo tải xong — chờ worker xác minh file",
+ scanning:"Worker đang quét trong kho cách ly",
  quarantined_unverified:"Trong kho cách ly — chưa được xác minh",
  rejected:"Bị từ chối",
  verified_internal:"Đã qua kiểm tra nội bộ — chưa được cấp OTA"
@@ -36,6 +39,9 @@ export function AdminIntakeList(){
   {items.map(item=><article className="intake-item" key={item.id}>
     <strong>{item.filename}</strong>
     <p>{(item.expected_bytes/1048576).toFixed(1)} MiB · {names[item.state]||"Trạng thái đang kiểm tra"}</p>
+    {item.scan_report?.bundle_id&&<p className="small-muted">Bundle: {item.scan_report.bundle_id} · v{item.scan_report.version||"?"} ({item.scan_report.build||"?"}) · Profile: {item.scan_report.profile_type||"chưa rõ"}</p>}
+    {item.scan_error&&<p className="small-muted">Mã kiểm tra: {item.scan_error}</p>}
+    {item.sha256_verified&&<p className="small-muted">SHA-256: {item.sha256_verified.slice(0,16)}… · Chỉ kiểm tra dữ liệu, không xác thực Apple</p>}
     <p className="small-muted">Tạo lúc {new Date(item.created_at).toLocaleString("vi-VN")} · Mã: {item.id.slice(0,8)}</p>
   </article>)}
  </div>;

@@ -17,3 +17,13 @@ Security hardening still required before enabling IPA upload:
 - real Preview integration tests with a trusted Admin JWT, CSRF, object byte-length checks, WAF/rate limits and malicious archive cases.
 
 **Do not enable the real IPA upload feature flags to test the registry or UI.** The registry currently contains no real IPA; database tests used an explicit transaction with ROLLBACK.
+
+## Scanner queue & result states (2026-11-03)
+
+Migration 20261103005500_ipa_quarantine_worker_transitions has been applied. After a real IPA PUT succeeds, POST /api/admin/uploads/complete calls ack_ipa_upload with the Admin's user JWT and receipt ID. The server never accepts a client-supplied R2 pathname or verified digest. Acknowledging a browser result only marks uploaded_pending_scan; it does not prove R2 persisted bytes.
+
+workers/quarantine_worker.py is a one-shot, OFF-by-default external task (Python standard library + OpenSSL). It uses a server-only Supabase secret key to claim a leased job, validates the database-owned R2 key, downloads at most 100 MiB over signed S3 GET, computes SHA256, then uses ipa_inspector for ZIP/Info.plist/CMS metadata checks. finish_ipa_scan checks lease ownership and allows at most 3 attempts. It can only set quarantined_unverified, rejected or retry state. Signing trust and OTA eligibility remain database-constrained false.
+
+The Admin Versions page shows pending/scanning/rejected/unverified and safe metadata. No real UDIDs are listed.
+
+NOT YET DEPLOYED as a background worker: CI and Vercel build DO NOT run this task. To turn on R2_SCANNER_READY, provision an isolated private worker scheduler and secrets (never public), 100-MiB file limit, CPU/memory/runtime controls, robust monitoring, private bucket lifecycle and object deletion after retention. Apple root/intermediate certificate trust, Mach-O nested code signatures, entitlements and OTA remain UNVERIFIED.

@@ -1,7 +1,7 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
 import {MAX_DIRECT_IPA_BYTES} from "@/modules/ipa/upload-policy";
-type Grant={uploadUrl?:string;headers?:Record<string,string>;error?:string};
+type Grant={uploadUrl?:string;headers?:Record<string,string>;receiptId?:string;error?:string};
 export function PrivateIpaUpload({file}:{file:File|null}){
  const [busy,setBusy]=useState(false),[progress,setProgress]=useState(0);
  const [status,setStatus]=useState("");
@@ -17,7 +17,7 @@ export function PrivateIpaUpload({file}:{file:File|null}){
     body:JSON.stringify({filename:file.name,size:file.size})
    });
    const grant=await response.json() as Grant;
-   if(!response.ok||!grant.uploadUrl||!grant.headers){
+   if(!response.ok||!grant.uploadUrl||!grant.headers||!grant.receiptId){
     setStatus(response.status===503
       ?"Upload riêng tư chưa được kích hoạt. Cần cấu hình kho R2, WAF và worker quét IPA."
       :response.status===401?"Phiên Admin hết hạn. Hãy đăng nhập lại."
@@ -41,7 +41,16 @@ export function PrivateIpaUpload({file}:{file:File|null}){
     xhr.send(file);
    });
    setProgress(100);
-   setStatus("R2 đã tiếp nhận file vào vùng cách ly. Chưa kiểm tra chữ ký, chưa xuất bản hay cho phép cài OTA.");
+   setStatus("Đang ghi nhận lượt upload để worker kiểm tra…");
+   const receipt=await fetch("/api/admin/uploads/complete",{
+     method:"POST",cache:"no-store",credentials:"same-origin",
+     headers:{"Content-Type":"application/json"},
+     body:JSON.stringify({receiptId:grant.receiptId})
+   });
+   if(receipt.ok)
+     setStatus("R2 đã nhận file và lượt quét đã được xếp hàng. Chưa xác minh chữ ký, chưa xuất bản hoặc cài OTA.");
+   else
+     setStatus("R2 đã trả thành công nhưng không xếp hàng quét được. Không được xuất bản; kiểm tra trong trang quản lý IPA.");
   }catch{
    setStatus("Không upload thành công. Có thể do mạng, CORS, thời hạn URL hoặc file không đúng dung lượng đã ký.");
   }finally{active.current=null;setBusy(false);}
