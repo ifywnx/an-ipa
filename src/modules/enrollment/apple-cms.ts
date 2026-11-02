@@ -86,7 +86,7 @@ export async function verifyAppleSignedDeviceCms(
         "cms","-verify","-verify_retcode","-inform","DER","-binary",
         "-in",input,"-out",content,"-CAfile",trust,
         "-no-CApath","-no-CAstore","-purpose","any"
-      ],{timeout:5000,maxBuffer:65536,env:{PATH:process.env.PATH}});
+      ],{timeout:5000,maxBuffer:65536});
     } catch {
       // Do not echo OpenSSL stderr, CMS contents or device identifiers into logs.
       throw new Error("Device CMS or certificate-chain verification failed");
