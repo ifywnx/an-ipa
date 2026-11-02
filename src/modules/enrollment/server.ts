@@ -33,7 +33,7 @@ export function getEnrollmentConfig(): EnrollmentConfig | null {
       trustedIpHeader:e.ENROLLMENT_TRUSTED_IP_HEADER.toLowerCase() };
   } catch { return null; }
 }
-export async function enrollmentDb<T>(config: EnrollmentConfig, path: string, init: RequestInit = {}): Promise<T> {
+export async function enrollmentDb<T>(config: Pick<EnrollmentConfig, "supabaseUrl" | "serviceKey">, path: string, init: RequestInit = {}): Promise<T> {
   const url = new URL("/rest/v1/" + path, config.supabaseUrl);
   const headers = new Headers(init.headers);
   headers.set("apikey", config.serviceKey);
