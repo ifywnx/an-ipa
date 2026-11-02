@@ -35,3 +35,8 @@ MDM Device Enrollment is a different, more powerful protocol with its own infras
 A physical iPhone and working CMS/SCEP provider are required. Test: Safari open page; consent; native profile download prompt; Settings → Profile Downloaded → Install; real Apple-signed CMS callback; one-time challenge; UI shows correct UDID; copy; duplicate callback rejected; expiry; wrong issuer/signature rejected; privacy deletion; device enrollment denial; iOS 26+ and different Safari sessions. Do not enable for users before testing.
 
 **No claim of physical device validation is made.** This is integration-ready API foundation, not a completed Apple Profile Service deployment.
+
+## Current operational limitation
+No trusted Profile Service/SCEP provider endpoint or proof of iOS device compatibility has been configured. The /udid UI deliberately shows an unavailable error rather than a fake downloadable profile. The current API verifies a provider's **attestation**, not Apple's CMS itself; do not claim native CMS verification in the web app.
+
+The session table holds short-lived encrypted identifiers. A permanent, consensual device registration and admin-management workflow must be implemented separately, with retention/deletion and authenticated role checks. No persistent public UDID store is enabled yet.

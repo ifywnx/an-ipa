@@ -21,7 +21,7 @@ export default async function AppDetails({ params }: { params: Promise<{ slug: s
     </div>
     <div className="panel"><h2>Giới thiệu</h2><p>{app.summary}</p></div>
     <div className="panel notice" role="note"><h2>Chưa mở cài đặt từ website</h2>
-      <p>Thông tin xuất bản ứng dụng không đồng nghĩa thiết bị đủ điều kiện cài IPA. Chỉ cung cấp liên kết cài đặt sau khi tích hợp và kiểm thử hệ thống ký, phân phối và đăng ký thiết bị.</p>
+      <p>Thông tin xuất bản ứng dụng không đồng nghĩa thiết bị đủ điều kiện cài IPA. IPA được chủ cửa hàng ký bằng LCSign trên iPhone. Chỉ mở liên kết cài đặt sau khi server xác minh chữ ký, provisioning profile, quyền phân phối và điều kiện thiết bị.</p>
       <Link href="/devices/register">Tìm hiểu điều kiện thiết bị</Link>
     </div>
   </section>;

@@ -1,22 +1,24 @@
 # AN IPA STORE
 
-Nền tảng phân phối ứng dụng iOS có quyền phân phối hợp lệ.
+iPhone-first, public catalog for legally distributable iOS apps. The owner signs authorized IPA files **on their own iPhone with LCSign**. Guests do not log in or install LCSign. The site does **not** sign IPA or collect P12, private keys or Apple certificate passwords.
 
-## Trạng thái
+## Status (2026-11-03)
 
-Repository bootstrap: Next.js + TypeScript, module domain và kiểm tra an toàn. Chưa phải hệ thống phân phối production. Chưa kết nối Supabase, Apple hoặc R2; không phát hành IPA, không thu UDID và không báo đăng ký thành công giả.
+- Public app catalog, detail pages and premium `/udid` Safari guide.
+- Admin shell for signed IPA preflight on iPhone, UDID workflow and per-app versions. Private upload and admin mutations **not enabled**.
+- Guest enrollment challenge API and database: random one-time token, 8-minute expiry, atomic consumption, browser HttpOnly cookie, encrypted UDID and Ed25519 provider-signed attestation verification. **Profile download is disabled until a real Apple-compliant Profile Service CMS/SCEP verifier is connected and tested on an actual iPhone.**
+- Pure OTA manifest builder and denial tests. No public install/manifest endpoint or IPA download currently exists.
+- Supabase project `an-ipa-store` has current migrations `platform_core`, `privacy_requests`, `harden_phase2_access`, and `guest_enrollment_verified_provider_foundation`. All guest enrollment data is inaccessible directly to browser roles.
+- No production deployment approved. GitHub `main` unchanged; code under `codex/bootstrap-an-ipa-store` and PR #1.
 
-## Chạy cục bộ
+## Local checks
 
-Node.js 22 LTS hoặc mới hơn.
+Node >= 22.
 
 ```sh
 npm ci
 cp .env.example .env.local
 npm run dev
-```
-
-```sh
 npm test
 npm run typecheck
 npm run build
@@ -24,24 +26,20 @@ npm run security:check
 npm audit --omit=dev
 ```
 
-## Cấu trúc
+## Routes
 
-- `src/app`: store, hướng dẫn đăng ký, trạng thái quản trị và health endpoint.
-- `src/modules`: quy tắc thiết bị, kiểm tra điều kiện OTA, hợp đồng tích hợp.
-- `tests`: kiểm thử quy tắc an toàn; không thay thế kiểm thử Apple thật.
-- `scripts`: kiểm tra file nhạy cảm trước commit/CI.
-- `docs`: audit, mô hình dữ liệu và báo cáo kiểm tra.
+- `/apps`: public published applications.
+- `/udid`: Safari enrollment guide, consent, actual server status and copy after provider verified.
+- `/devices/register`: manual path explanation, no submission until encrypted persistence is available.
+- `/admin`: read-only mobile admin shell.
+- `/admin/ipa`: signed IPA local preflight; **does not upload**.
+- `/admin/ipa/versions`: version management shell.
+- `/admin/udids`: device management shell.
 
-Đọc ARCHITECTURE.md và IMPLEMENTATION_PLAN.md trước khi mở rộng. Không đặt P12, private key, provisioning profile hoặc IPA thật trong repository. `.gitignore` không bảo vệ file đã được tracked; luôn chạy security check.
+## Safety boundaries and next steps
 
-## Git workflow
+See `ARCHITECTURE.md`, `IMPLEMENTATION_PLAN.md`, `docs/ENROLLMENT_PROTOCOL.md` and `docs/LCSIGN_IPHONE_WORKFLOW.md`. An Apple OTA Profile Service is not a normal mobileconfig; a working provider must verify CMS and complete the real protocol. Apple documentation for that flow is archived, so modern iPhone compatibility needs physical-device testing.
 
-Làm việc trên `codex/*`, review và CI trước merge. Không force push main. Chưa có workflow deploy; production bị chặn đến khi security gate trong kế hoạch được hoàn thành.
+Only publish verified signed IPA after archive scanning, provisioning profile/team/entitlement checks and allowed rights are confirmed. Device UDID in the same signed Ad Hoc profile is mandatory, alongside Apple registration. Never claim a completed installation from a click or a manually typed UDID.
 
-## Phase 2 — cập nhật 2026-11-03
-
-- Danh mục /apps, trang chi tiết /apps/[slug], tìm kiếm và lọc danh mục; dữ liệu chỉ đọc từ Supabase REST public projection khi được cấu hình.
-- Giao diện /auth và /admin đang khóa; **không có đăng nhập, phân quyền hoặc thao tác quản trị thực**.
-- Migration SQL `supabase/migrations/20261103000100_phase2_core.sql` có RLS mặc định chặn. Chưa chạy trên Supabase; xem `docs/PHASE2_DATABASE.md`.
-- Chưa có IPA thực, Apple registration, signed URL, hoặc production deployment. Không đưa secret vào NEXT_PUBLIC_*.
-- Mọi commit được thực hiện trên nhánh phát triển và review qua PR #1; `main` không bị thay đổi.
+No secrets, UDIDs, IPA, profile, P12 or private keys are committed to GitHub. Deploy production only after security gates and test-device approval.
