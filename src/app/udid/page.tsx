@@ -8,6 +8,6 @@ export default function UdidPage(){
     <EnrollmentFlow/>
     <div className="enroll-help"><h2>Nếu không muốn cài profile?</h2>
     <p>Bạn có thể lấy UDID bằng công cụ được Apple hỗ trợ rồi gửi thủ công khi hệ thống đăng ký bảo mật được mở. Nhập thủ công chưa được xem là đã xác minh thiết bị.</p>
-    <Link href="/devices/register">Xem hướng dẫn UDID thủ công →</Link></div>
+    <Link href="/udid/manual">Gửi UDID thủ công →</Link></div>
   </div>;
 }

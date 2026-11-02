@@ -34,3 +34,6 @@
 @media(max-width:520px){.enroll-shell{padding:12px 0 42px}.enroll-intro h1{font-size:39px;letter-spacing:-1.8px}.enroll-panel{padding:23px;border-radius:20px}.enroll-trust{margin-top:16px}.enroll-guide h2{font-size:20px}}
 
 .enroll-remove{display:block;margin-top:14px;padding:10px 0;border:0;background:transparent;color:#9a3f32;text-decoration:underline;font:inherit;font-size:13px;cursor:pointer;width:100%;text-align:center}
+
+.manual-udid-form label:not(.enroll-consent){display:block;font-weight:700;font-size:13px;margin:12px 0 8px}
+.manual-udid-form input:not([type=checkbox]){width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;color:var(--fg);background:var(--panel);font:inherit}
