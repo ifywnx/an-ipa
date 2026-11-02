@@ -1,14 +1,15 @@
 import Link from "next/link";
 const areas = [
-  {name:"Tổng quan",desc:"Báo cáo hoạt động và kiểm soát trạng thái",ready:false},
-  {name:"Ứng dụng",desc:"Quản lý ứng dụng, nhà phát triển và phê duyệt",ready:false},
-  {name:"Thiết bị",desc:"Đăng ký, xác minh, thu hồi quyền",ready:false},
-  {name:"Phân phối",desc:"Kênh IPA, profile và quyền cài đặt",ready:false},
-  {name:"Nhật ký",desc:"Truy vết hành động quản trị có kiểm soát",ready:false},
+  {name:"IPA đã ký", desc:"Chọn IPA từ iPhone, kiểm tra sơ bộ, theo dõi quy trình ký lại", href:"/admin/ipa"},
+  {name:"Thiết bị & UDID",desc:"Theo dõi trạng thái, hướng dẫn bổ sung provisioning profile",href:"/admin/udids"},
 ];
-export default function Admin() { return <section className="reading wide-reading">
-  <p className="eyebrow">ADMIN WORKSPACE</p><h1>Quản trị ứng dụng.</h1>
-  <div className="panel notice" role="status"><h2>Quản trị chưa được kích hoạt</h2><p>Không có dữ liệu quản trị được tải xuống trình duyệt. Cần xác thực phiên, phân quyền server-side và kiểm thử RLS trước khi bật bất kỳ chức năng nào.</p>
-  <Link href="/auth">Tài khoản</Link></div>
-  <div className="admin-modules">{areas.map(a => <article className="panel" key={a.name}><p className="eyebrow">CHƯA CẤU HÌNH</p><h2>{a.name}</h2><p>{a.desc}</p><span className="badge">Đang phát triển</span></article>)}</div>
+export default function Admin() { return <section className="reading wide-reading admin-mobile">
+  <p className="eyebrow">AN IPA STORE · MOBILE ADMIN</p><h1>Điều hành trên iPhone.</h1>
+  <p className="lead">Ký bằng LCSign trên iPhone. Website không yêu cầu P12/private key và không ký IPA.</p>
+  <div className="panel notice" role="status"><h2>Quyền quản trị chưa kích hoạt</h2>
+    <p>Các màn hình tiếp theo là giao diện và hướng dẫn, chưa truy cập dữ liệu riêng hoặc thao tác ghi. Auth/RBAC, kiểm tra chữ ký độc lập và private upload phải được bật sau kiểm thử.</p></div>
+  <div className="admin-modules">
+    {areas.map(a => <article className="panel" key={a.href}><h2>{a.name}</h2><p>{a.desc}</p><Link className="secondary-button" href={a.href}>Mở hướng dẫn</Link></article>)}
+  </div>
+  <div className="panel"><h2>Quy trình phát hành</h2><ol><li>Ký IPA trong LCSign trên iPhone.</li><li>Upload riêng tư lên website khi chức năng bảo mật được bật.</li><li>Quét ZIP, xác minh chữ ký và provisioning profile.</li><li>Xuất bản phiên bản đủ điều kiện, cấp OTA theo từng thiết bị.</li></ol></div>
 </section>; }

@@ -1,1 +1,14 @@
-export default function Register(){return <section className="reading"><p className="eyebrow">ĐĂNG KÝ THIẾT BỊ</p><h1>Bắt đầu từ thiết bị của bạn.</h1><p className="lead">Đăng ký tự động chưa được kích hoạt. Website không thể đọc UDID bằng JavaScript trên Safari.</p><div className="panel"><h2>Lấy UDID bằng Finder trên Mac</h2><ol><li>Kết nối iPhone hoặc iPad với Mac bằng cáp.</li><li>Mở Finder, chọn thiết bị và xác nhận Tin cậy trên thiết bị của bạn.</li><li>Nhấp thông tin bên dưới tên thiết bị để chuyển tới UDID, rồi sao chép.</li></ol><p>Chưa gửi UDID qua website lúc này. Form đăng ký sẽ được mở sau khi hệ thống bảo vệ dữ liệu và xác minh hoạt động.</p></div><h2>Quyền riêng tư trước khi đăng ký</h2><p>UDID dùng để xác định thiết bị trong quy trình phân phối Ad Hoc. Khi mở đăng ký, hệ thống phải cung cấp thông tin lưu trữ, thời hạn lưu dữ liệu, quyền hủy và xóa dữ liệu trước khi bạn đồng ý.</p><p>Yêu cầu thủ công luôn chờ xác minh. Duyệt nội bộ không đồng nghĩa thiết bị đã được Apple đăng ký hoặc có thể cài IPA.</p></section>}
+import Link from "next/link";
+export default function Register(){ return <section className="reading">
+  <p className="eyebrow">THIẾT BỊ · KHÔNG CẦN TÀI KHOẢN</p><h1>Đăng ký thiết bị iPhone.</h1>
+  <p className="lead">Bạn có thể xem ứng dụng mà không đăng nhập. Với ứng dụng Ad Hoc, thiết bị phải được phép và có trong provisioning profile của bản IPA đã ký.</p>
+  <div className="panel notice" role="status"><h2>Chưa mở thu thập UDID</h2>
+  <p>Không có chức năng JavaScript nào tự đọc UDID trên Safari. Hệ thống sẽ chỉ cung cấp profile lấy UDID khi triển khai đúng cơ chế Apple, xác minh CMS/challenge và có sự đồng ý của người dùng. Chúng tôi không phát profile giả.</p></div>
+  <div className="panel"><h2>Phương án nhập UDID thủ công</h2>
+    <ol><li>Lấy UDID qua Finder/thiết bị và phương thức được Apple hỗ trợ hoặc từ nhà quản trị thiết bị hợp lệ.</li>
+    <li>Khi biểu mẫu bảo mật được mở, gửi UDID với sự đồng ý về mục đích lưu giữ và quyền xóa.</li>
+    <li>Yêu cầu được gắn trạng thái chờ xác minh; chủ website kiểm tra việc đăng ký với Apple và cập nhật profile.</li>
+    <li>Chỉ sau khi IPA đã ký lại và chứa UDID hợp lệ, website mới có thể xét cấp liên kết cài OTA.</li></ol>
+    <p>Hiện tại chưa có biểu mẫu gửi dữ liệu lên server. Không gửi UDID qua trang hỗ trợ hoặc nơi công khai.</p></div>
+  <p><Link href="/apps">Xem danh mục ứng dụng</Link></p>
+</section>; }
