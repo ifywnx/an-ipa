@@ -46,6 +46,6 @@ export default function SignedIpaPage() {
       <li>Nhập profile mới vào LCSign trên iPhone, ký lại IPA.</li>
       <li>Upload bản IPA đã ký mới và đợi kiểm tra hoàn chỉnh trước khi phát hành.</li></ol>
     </div>
-    <Link href="/admin/udids">Xem quy trình quản lý UDID →</Link>
+    <p><Link href="/admin/ipa/versions">Quản lý ứng dụng và phiên bản →</Link></p><p><Link href="/admin/udids">Xem quy trình quản lý UDID →</Link></p>
   </section>;
 }
