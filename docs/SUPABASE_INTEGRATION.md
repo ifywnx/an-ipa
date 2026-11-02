@@ -1,20 +1,21 @@
 # Supabase integration audit (2026-11-03)
 
 ## Confirmed project
-- Supabase project name: `an-ipa-store`, region `ap-southeast-1`. Project ref is not a secret.
-- Existing migration history: `20261102193636_platform_core` and `20261102194318_privacy_requests`.
-- Live public schema has 15 tables, all with RLS enabled at inspection.
-- These tables predate the Phase 2 GitHub migration file and have a **different schema**. Never run the obsolete proposed migration onto this project.
-- No users, published apps or device records existed at inspection. No IPA signing or Apple integration exists.
-- Public catalog is mapped to `apps(slug,name,developer,description,category,published)`.
-- Configure `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` in hosting platform environment, not as a committed actual `.env.local`. Publishable keys are client safe but service/secret keys are not.
-- Auth and admin mutations must remain disabled until secure session, server-side roles, rate limits and redirect settings have passed security tests.
+- Dedicated project: `an-ipa-store` (Singapore), already active.
+- Canonical migration history: `20261102193636_platform_core`, `20261102194318_privacy_requests`, and **`harden_phase2_access` applied 2026-11-03**.
+- 15 public tables already existed; all RLS enabled. Previous repository draft migration conflicted and is now a no-op.
+- Public catalog maps columns `slug,name,developer,description,category,published`; it never queries sensitive rights reference metadata.
+- No users or published records at inspection; no real IPA or Apple signing integration.
 
-## Data exposure and Phase 2 hardening
-Security review found authenticated publisher policies allowing edits across other publishers' apps and an overly broad anonymous table SELECT grant. A hardening migration restricts these; upload/device writes are withheld pending encryption and validation. See `docs/PHASE2_DATABASE.md`.
+## Safety checks
+- Migration removed mutations on app catalog, app versions, distribution channels, IPA assets and device registration by browser roles.
+- Limited selected catalog columns to anonymous/authenticated, subject to `published` RLS.
+- Removed permissive publisher-wide policies and storage IPA upload/read policies.
+- Confirmed security advisor only reported informational no-policy warnings for deliberately blocked tables.
+- Never commit keys. Put `NEXT_PUBLIC_SUPABASE_URL` and the *publishable* key in protected hosting environment only.
 
-## Before real Auth
-Use `@supabase/ssr` with Next.js Proxy refresh and verified `getClaims()` (not client-supplied metadata) per official guidance. Do not implement homemade JWT parsing. Require verified email and server-side role checks and provider-specific anti-abuse. Review callback domains, SMTP and safe account recovery before opening sign-in.
-
-## Verification still required
-Local RLS integration tests with distinct authenticated identities; Apple device verification, signing worker, IPA upload pipeline, encryption/retention of UDID, dependency security audit and staging tests.
+## Work remaining
+- Proper Supabase Auth SSR with `@supabase/ssr`, verified claims and cookie refresh.
+- Distinct-user database tests proving RLS, server-side role decisions, invitation/onboarding and secure provider configuration.
+- Actual UI integration, tests on mobile, privacy-aware encrypted UDID lifecycle and macOS signing worker.
+- No production release until full security gate.
