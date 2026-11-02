@@ -2,7 +2,7 @@ import {createHash,createHmac} from "node:crypto";
 import type {PrivateR2} from "./r2-presign";
 
 /** Only for tiny synthetic Preview diagnostics; NEVER user-supplied IPA. */
-export type DiagnosticMethod="PUT"|"HEAD"|"DELETE";
+export type DiagnosticMethod="PUT"|"HEAD"|"GET"|"DELETE";
 const sha256=(value:Buffer|string)=>createHash("sha256").update(value).digest("hex");
 const hmac=(key:Buffer|string,value:string)=>createHmac("sha256",key).update(value).digest();
 const encode=(value:string)=>encodeURIComponent(value).replace(/[!'()*]/g,char=>"%"+char.charCodeAt(0).toString(16).toUpperCase());

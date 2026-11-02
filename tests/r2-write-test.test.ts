@@ -10,14 +10,17 @@ test("S3 signatures vary with method/body and never include secret",()=>{
  const body=Buffer.from("synthetic test\n");
  const put=signDiagnosticObjectRequest(config,key,"PUT",body,now);
  const head=signDiagnosticObjectRequest(config,key,"HEAD",Buffer.alloc(0),now);
+ const get=signDiagnosticObjectRequest(config,key,"GET",Buffer.alloc(0),now);
  const del=signDiagnosticObjectRequest(config,key,"DELETE",Buffer.alloc(0),now);
  assert.ok(put.url.startsWith("https://"+config.accountId+".r2.cloudflarestorage.com/an-ipa-quarantine/diagnostics/"));
  assert.equal(put.url,head.url);
  assert.equal(head.url,del.url);
+ assert.equal(get.url,del.url);
  assert.match(put.headers.Authorization,/^AWS4-HMAC-SHA256 Credential=/);
  assert.match(put.headers.Authorization,/Signature=[a-f0-9]{64}$/);
  assert.notEqual(put.headers.Authorization,head.headers.Authorization);
  assert.notEqual(head.headers.Authorization,del.headers.Authorization);
+ assert.notEqual(get.headers.Authorization,head.headers.Authorization);
  assert.ok(!JSON.stringify(put).includes(config.secretAccessKey));
  assert.equal(put.headers["If-None-Match"],"*");
  assert.notEqual(put.headers.Authorization,signDiagnosticObjectRequest(config,key,"PUT",Buffer.from("different"),now).headers.Authorization);
@@ -35,5 +38,9 @@ test("write test must require fresh Admin, Preview origin and separate flag",()=
  assert.match(route,/R2_WRITE_DIAGNOSTICS_ENABLED/);
  assert.match(route,/sameOrigin/);
  assert.match(route,/send\("DELETE"\)/);
+ assert.match(route,/send\("GET"\)/);
+ assert.match(route,/actual\.equals\(body\)/);
+ assert.match(route,/readTinyObject\(get,256\)/);
+ assert.match(route,/R2_WRITE_READ_OK_HEAD_INCONCLUSIVE/);
  assert.doesNotMatch(route,/R2_PRIVATE_UPLOAD_ENABLED/);
 });

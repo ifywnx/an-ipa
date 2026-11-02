@@ -5,6 +5,28 @@ import {adminConfig,verifiedAdmin} from "@/modules/auth/admin-server";
 import {sameOrigin,unsealAdminSession,ADMIN_COOKIE} from "@/modules/auth/session";
 import {validateR2,type PrivateR2} from "@/modules/ipa/r2-presign";
 import {signDiagnosticObjectRequest,type DiagnosticMethod} from "@/modules/ipa/r2-signed-requests";
+/** Prevent unexpected remote content from consuming unbounded server memory. */
+async function readTinyObject(response:Response,limit:number):Promise<Buffer|null>{
+ const header=response.headers.get("content-length");
+ if(header!==null && (!/^\d+$/.test(header)||Number(header)>limit))return null;
+ if(!response.body)return null;
+ const reader=response.body.getReader(),chunks:Buffer[]=[];
+ let total=0;
+ try{
+  while(true){
+   const part=await reader.read();
+   if(part.done)break;
+   total+=part.value.byteLength;
+   if(total>limit)return null;
+   chunks.push(Buffer.from(part.value));
+  }
+  return Buffer.concat(chunks,total);
+ }finally{
+  await reader.cancel().catch(()=>{});
+  reader.releaseLock();
+ }
+}
+
 
 export const runtime="nodejs";
 export const dynamic="force-dynamic";
@@ -42,14 +64,28 @@ export async function POST(req:NextRequest){
    redirect:"error",cache:"no-store",signal:AbortSignal.timeout(7500)});
  }
  let state="R2_TEST_FAILED";
- // A network timeout after PUT may have persisted the object, so DELETE is
- // attempted even when the PUT response was lost.
+ // HEAD may be unavailable or omit size metadata on some intermediaries.
+ // Independently read and compare the exact *synthetic* object bytes.
+ // GET never touches an IPA and no object content reaches the browser.
  try{
   const put=await send("PUT");
   if(put.ok){
-   const head=await send("HEAD");
-   state=head.ok && head.headers.get("content-length")===String(body.length)
-    ?"R2_WRITE_AND_READ_OK":"R2_VERIFY_FAILED";
+   let headVerified=false;
+   try{
+    const head=await send("HEAD");
+    headVerified=head.ok && head.headers.get("content-length")===String(body.length);
+   }catch{/* GET is the authoritative tiny-byte check below. */}
+   const get=await send("GET");
+   if(get.ok){
+    const actual=await readTinyObject(get,256);
+    if(actual && actual.equals(body))
+      state=headVerified?"R2_WRITE_TEST_OK":"R2_WRITE_READ_OK_HEAD_INCONCLUSIVE";
+    else
+      state="R2_CONTENT_MISMATCH";
+   }else{
+    state=(get.status===401||get.status===403)?"R2_GET_PERMISSION_DENIED"
+      :get.status===404?"R2_GET_NOT_FOUND":"R2_GET_FAILED";
+   }
   }else{
    state=put.status===401||put.status===403?"R2_WRITE_PERMISSION_DENIED":"R2_WRITE_REJECTED";
   }
@@ -64,7 +100,7 @@ export async function POST(req:NextRequest){
   console.error("R2 synthetic write-test cleanup failed");
   return result("R2_CLEANUP_FAILED",503);
  }
- return state==="R2_WRITE_AND_READ_OK"
-  ?result("R2_WRITE_TEST_OK",200)
+ return state==="R2_WRITE_TEST_OK" || state==="R2_WRITE_READ_OK_HEAD_INCONCLUSIVE"
+  ?result(state,200)
   :result(state,503);
 }

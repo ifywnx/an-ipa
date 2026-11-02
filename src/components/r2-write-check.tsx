@@ -2,7 +2,12 @@
 import {useState} from "react";
 type Result={state?:string};
 const message:Record<string,string>={
- R2_WRITE_TEST_OK:"Đã thử ghi tệp mẫu, đọc kích thước và xóa tệp khỏi R2 thành công. Chưa thử upload IPA từ Safari.",
+ R2_WRITE_TEST_OK:"Đã ghi, xác minh HEAD, đọc đối chiếu từng byte bằng GET và xóa file mẫu thành công. Chưa thử upload IPA từ Safari.",
+ R2_WRITE_READ_OK_HEAD_INCONCLUSIVE:"Đã ghi, đọc đúng toàn bộ nội dung file mẫu bằng GET và xóa thành công. Chỉ kiểm tra metadata HEAD chưa xác nhận được; không ảnh hưởng kết quả đối chiếu nội dung.",
+ R2_CONTENT_MISMATCH:"File đọc lại khác nội dung đã ghi hoặc vượt giới hạn 256 byte. Không thể xác nhận tính toàn vẹn.",
+ R2_GET_PERMISSION_DENIED:"Ghi thành công nhưng Cloudflare từ chối đọc file qua GET. Kiểm tra quyền Object Read.",
+ R2_GET_NOT_FOUND:"Ghi được nhưng không tìm thấy file mẫu khi đọc lại.",
+ R2_GET_FAILED:"Ghi thành công nhưng GET không trả dữ liệu hợp lệ.",
  R2_WRITE_PERMISSION_DENIED:"Cloudflare R2 từ chối quyền ghi. Hãy kiểm tra API token có Object Read & Write.",
  R2_WRITE_REJECTED:"R2 không chấp nhận ghi tệp thử nghiệm.",
  R2_VERIFY_FAILED:"Đã gửi tệp mẫu nhưng không xác minh được bằng HEAD Object.",

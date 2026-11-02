@@ -48,3 +48,7 @@ The Admin page has a separate **write / HEAD / delete synthetic sample** button.
 The browser only sees fixed status codes; it never receives R2 credentials, URLs, object names or payload. If deletion fails, the endpoint fails closed and the operator must inspect `diagnostics/` for leftovers; configure lifecycle expiry for diagnostics as defense in depth.
 
 A successful test checks server-side Object Read/Write/Delete only. It **does not validate CORS, Safari uploads, Ad Hoc profile, code signature, IPA authenticity or OTA eligibility**. The R2 IPA upload feature flags remain OFF. Disable `R2_WRITE_DIAGNOSTICS_ENABLED` after testing.
+
+## Verification improvement — 2026-11-03
+
+The first live user test showed a successful PUT and DELETE but the HEAD Object size check was inconclusive. The exact R2 HEAD response/status was not recorded, so the root cause is not yet confirmed. The diagnostic now performs **PUT → HEAD (informational) → GET (bounded to 256 bytes, exact byte comparison) → DELETE**. A successful GET comparison and confirmed DELETE returns a separate success when HEAD metadata could not be validated; do not mistake that for proof HEAD worked. If GET is blocked or bytes differ, the route returns a specific fixed error. This is synthetic server-side R2 testing only; Safari CORS, IPA uploads, Apple code signing and OTA remain unverified.
