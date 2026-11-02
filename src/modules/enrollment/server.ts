@@ -42,6 +42,7 @@ export async function enrollmentDb<T>(config: EnrollmentConfig, path: string, in
   if (init.body) headers.set("Content-Type", "application/json");
   const r = await fetch(url, { ...init, headers, cache:"no-store", signal:AbortSignal.timeout(5000) });
   if (!r.ok) throw new Error("Enrollment database unavailable");
+  if (r.status === 204) return null as T;
   return await r.json() as T;
 }
 export const tokenHash = sha256;
