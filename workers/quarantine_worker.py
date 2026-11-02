@@ -109,7 +109,7 @@ def r2_signed_get(cfg: dict[str, str], object_key: str, now: datetime | None = N
 
 
 def rpc(cfg: dict[str, str], endpoint: str, payload: dict) -> object:
-    if endpoint not in ("claim_ipa_scan", "finish_ipa_scan"):
+    if endpoint not in ("reap_expired_ipa_scans", "claim_ipa_scan", "finish_ipa_scan"):
         raise WorkerError("INVALID_RPC")
     url = cfg["supabase"] + "/rest/v1/rpc/" + endpoint
     headers = {"apikey": cfg["secret"], "Content-Type": "application/json",
@@ -215,6 +215,7 @@ def sanitized_report(inspected: dict) -> dict:
 
 
 def run_one(cfg: dict[str, str]) -> dict:
+    rpc(cfg, "reap_expired_ipa_scans", {})
     data = rpc(cfg, "claim_ipa_scan", {})
     if data == []:
         return {"status": "idle"}

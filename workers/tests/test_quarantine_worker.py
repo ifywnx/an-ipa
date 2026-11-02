@@ -80,7 +80,7 @@ class WorkerSafetyTests(unittest.TestCase):
                                    "expires_at":"2027-01-01T00:00:00+00:00",
                                    "ad_hoc_device_count":0,"cms_content_integrity":True}}
         with mock.patch.object(worker, "rpc", side_effect=[
-            [self.claim], True]) as rpc, mock.patch.object(
+            {"expired_intakes":0}, [self.claim], True]) as rpc, mock.patch.object(
                 worker, "download_to_quarantine", return_value="a"*64), mock.patch.object(
                     worker, "inspect_ipa", return_value=fake_report):
             result = worker.run_one(self.cfg)
