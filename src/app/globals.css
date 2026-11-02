@@ -47,3 +47,5 @@
 .upload-quarantine .button{border:0;cursor:pointer;margin-right:10px}
 .upload-quarantine .button:disabled{opacity:.5;cursor:not-allowed}
 .upload-quarantine progress{display:block;width:100%;height:14px;margin:14px 0}
+
+.intake-item{padding:14px 0;border-top:1px solid var(--line)}.intake-item strong{display:block;overflow-wrap:anywhere}.intake-item p{margin:6px 0}

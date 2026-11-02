@@ -1,9 +1,11 @@
 import Link from "next/link";
+import {AdminIntakeList} from "@/components/admin-intake-list";
 export default function Versions(){
  return <section className="reading wide-reading admin-mobile">
   <Link className="back-link" href="/admin/ipa">← IPA từ iPhone</Link>
   <p className="eyebrow">AN IPA STORE / BUILD REGISTRY</p><h1>Ứng dụng & phiên bản.</h1>
   <p className="lead">Theo dõi mỗi ứng dụng theo bundle ID, phiên bản, build, chữ ký và provisioning profile. Khi thay profile trong LCSign, bạn phải tải lên một IPA đã ký mới.</p>
+  <AdminIntakeList/>
   <div className="panel notice" role="status"><h2>Chưa có phiên bản được xác minh</h2>
    <p>Không hiển thị IPA hay dữ liệu nội bộ cho khách. Phần quản lý thật được mở sau khi xác thực quyền Admin, lưu trữ riêng và worker quét chữ ký hoàn tất.</p></div>
   <div className="admin-modules">
