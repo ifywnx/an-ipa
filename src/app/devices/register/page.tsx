@@ -1,14 +1,10 @@
 import Link from "next/link";
-export default function Register(){ return <section className="reading">
-  <p className="eyebrow">THIẾT BỊ · KHÔNG CẦN TÀI KHOẢN</p><h1>Đăng ký thiết bị iPhone.</h1>
-  <p className="lead">Bạn có thể xem ứng dụng mà không đăng nhập. Với ứng dụng Ad Hoc, thiết bị phải được phép và có trong provisioning profile của bản IPA đã ký.</p>
-  <div className="panel notice" role="status"><h2>Chưa mở thu thập UDID</h2>
-  <p>Không có chức năng JavaScript nào tự đọc UDID trên Safari. Hệ thống sẽ chỉ cung cấp profile lấy UDID khi triển khai đúng cơ chế Apple, xác minh CMS/challenge và có sự đồng ý của người dùng. Chúng tôi không phát profile giả.</p></div>
-  <div className="panel"><h2>Phương án nhập UDID thủ công</h2>
-    <ol><li>Lấy UDID qua Finder/thiết bị và phương thức được Apple hỗ trợ hoặc từ nhà quản trị thiết bị hợp lệ.</li>
-    <li>Khi biểu mẫu bảo mật được mở, gửi UDID với sự đồng ý về mục đích lưu giữ và quyền xóa.</li>
-    <li>Yêu cầu được gắn trạng thái chờ xác minh; chủ website kiểm tra việc đăng ký với Apple và cập nhật profile.</li>
-    <li>Chỉ sau khi IPA đã ký lại và chứa UDID hợp lệ, website mới có thể xét cấp liên kết cài OTA.</li></ol>
-    <p>Hiện tại chưa có biểu mẫu gửi dữ liệu lên server. Không gửi UDID qua trang hỗ trợ hoặc nơi công khai.</p></div>
-  <p><Link href="/apps">Xem danh mục ứng dụng</Link></p>
-</section>; }
+export default function Register(){return <section className="reading">
+  <p className="eyebrow">KHÔNG CẦN ĐĂNG NHẬP</p><h1>Đăng ký iPhone để cài app.</h1>
+  <p className="lead">Với app Ad Hoc, UDID phải có trong provisioning profile của IPA đã ký. LCSign chỉ cài trên iPhone của chủ cửa hàng, không phải iPhone của khách.</p>
+  <Link href="/udid" className="button">Xem hướng dẫn lấy UDID</Link>
+  <div className="panel"><h2>Hai phương thức hợp lệ</h2>
+    <ol><li><strong>Profile Service đã xác minh:</strong> tạo token một lần, chấp thuận trên iPhone, chỉ công bố UDID khi máy chủ đã kiểm chứng phản hồi thiết bị theo Apple.</li>
+    <li><strong>Nhập thủ công:</strong> lấy UDID qua Finder hoặc nguồn đáng tin cậy rồi gửi theo biểu mẫu có kiểm soát. Hiện chưa mở gửi UDID thủ công, tránh lộ dữ liệu nhạy cảm.</li></ol>
+    <p>Việc lấy UDID không tự đăng ký thiết bị với Apple Developer. Nếu profile chưa có UDID, chủ cửa hàng phải cập nhật profile và ký IPA lại bằng LCSign trên iPhone.</p></div>
+</section>}
