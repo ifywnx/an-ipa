@@ -24,7 +24,7 @@ export interface R2UploadGrant {
  * Validate this behavior against the *actual* R2 and Safari before enabling.
  */
 export function presignPrivateIpaPut(
- config:PrivateR2,size:number,now=new Date(),identifier=randomUUID()
+ config:PrivateR2,size:number,now=new Date(),identifier:string=randomUUID()
 ):R2UploadGrant {
  if(!validateR2(config))throw Error("Invalid R2 configuration");
  if(!Number.isSafeInteger(size)||size<100||size>MAX_DIRECT_IPA_BYTES)
