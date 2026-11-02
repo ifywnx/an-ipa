@@ -4,13 +4,14 @@ import {redirect} from "next/navigation";
 import {ADMIN_COOKIE, readKey,unsealAdminSession} from "./session";
 
 export interface AdminAuthConfig {
- origin:string;supabaseUrl:string;publishableKey:string;secretKey:string;cookieKey:Buffer;
+ origin:string;supabaseUrl:string;publishableKey:string;cookieKey:Buffer;
 }
 export function adminConfig():AdminAuthConfig|null{
  const e=process.env;
- if(e.ADMIN_AUTH_ENABLED!=="true"||e.ADMIN_AUTH_WAF_READY!=="true"||
+ if(e.ADMIN_AUTH_ENABLED!=="true"||
+   !(e.ADMIN_AUTH_WAF_READY==="true" || (e.VERCEL_ENV==="preview" && e.ADMIN_AUTH_PREVIEW_PROTECTED==="true"))||
   !e.APP_ORIGIN||!e.NEXT_PUBLIC_SUPABASE_URL||
-  !e.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||!e.SUPABASE_SECRET_KEY||
+  !e.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY||
   !e.ADMIN_SESSION_KEY_B64)return null;
  try{
   const origin=new URL(e.APP_ORIGIN),db=new URL(e.NEXT_PUBLIC_SUPABASE_URL);
@@ -19,8 +20,7 @@ export function adminConfig():AdminAuthConfig|null{
     origin.username||origin.password||db.username||db.password)return null;
   const key=readKey(e.ADMIN_SESSION_KEY_B64);
   return {origin:origin.origin,supabaseUrl:db.origin,
-    publishableKey:e.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
-    secretKey:e.SUPABASE_SECRET_KEY,cookieKey:key};
+    publishableKey:e.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,cookieKey:key};
  }catch{return null;}
 }
 type AuthUser = {id?:unknown;email?:unknown;email_confirmed_at?:unknown;banned_until?:unknown};
@@ -53,9 +53,9 @@ export async function verifiedAdmin(accessToken:string,cfg:AdminAuthConfig,
   url.searchParams.set("user_id","eq."+u.id);
   url.searchParams.set("role","eq.admin");
   url.searchParams.set("limit","1");
-  const authHeaders:Record<string,string>={apikey:cfg.secretKey};
-  if(!cfg.secretKey.startsWith("sb_secret_"))
-    authHeaders.Authorization="Bearer "+cfg.secretKey;
+  // Use the confirmed user JWT with the existing read_own_role RLS policy.
+  // No service-role key is required or exposed to the login flow.
+  const authHeaders:Record<string,string>={apikey:cfg.publishableKey, Authorization:"Bearer "+accessToken};
   const roleResponse=await transport(url.toString(),{
     headers:authHeaders,signal:AbortSignal.timeout(7000),cache:"no-store"
   });
