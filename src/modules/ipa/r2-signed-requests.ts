@@ -14,7 +14,7 @@ export function signDiagnosticObjectRequest(
   !/^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(config.bucket)||
   !config.accessKeyId||!config.secretAccessKey)throw Error("R2_CONFIG_INVALID");
  // Only a server-generated UUID under diagnostics/ is accepted, not other objects.
- if(!/^diagnostics\/[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.txt$/i.test(key))
+ if(!/^diagnostics\/(?:[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.txt|browser-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\.bin)$/i.test(key))
    throw Error("R2_DIAGNOSTIC_PATH_INVALID");
  if(method!=="PUT"&&body.length!==0)throw Error("UNEXPECTED_BODY");
  if(body.length>256)throw Error("DIAGNOSTIC_PAYLOAD_TOO_LARGE");

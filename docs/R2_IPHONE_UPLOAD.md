@@ -52,3 +52,11 @@ A successful test checks server-side Object Read/Write/Delete only. It **does no
 ## Verification improvement — 2026-11-03
 
 The first live user test showed a successful PUT and DELETE but the HEAD Object size check was inconclusive. The exact R2 HEAD response/status was not recorded, so the root cause is not yet confirmed. The diagnostic now performs **PUT → HEAD (informational) → GET (bounded to 256 bytes, exact byte comparison) → DELETE**. A successful GET comparison and confirmed DELETE returns a separate success when HEAD metadata could not be validated; do not mistake that for proof HEAD worked. If GET is blocked or bytes differ, the route returns a specific fixed error. This is synthetic server-side R2 testing only; Safari CORS, IPA uploads, Apple code signing and OTA remain unverified.
+
+## Browser / Safari CORS smoke test
+
+On the protected Preview Admin page, the `Thử upload mẫu qua trình duyệt` button generates an ephemeral `diagnostics/browser-<UUID>.bin` object only. `POST /api/admin/storage/browser-test` requires fresh Admin Auth, strict same-origin, Preview and `R2_BROWSER_DIAGNOSTICS_ENABLED=true`. It grants a 60-second presigned R2 `PUT` for the exact synthetic byte length and `application/octet-stream`, then the browser performs a cross-origin CORS PUT. The server accepts a short-lived HMAC-authenticated lease scoped to the Admin, reads max 256 bytes through signed R2 GET, compares exact bytes, and attempts DELETE even on a failed upload. It reports independently whether the browser observed a successful CORS PUT response and whether the server read the same content.
+
+No real IPA, user-provided bytes, public URL, private key or signing certificate is used. A presigned URL is an expiring bearer capability; never log it. An abandoned browser test can leave a diagnostic object; configure a `diagnostics/` lifecycle delete policy. A successful browser test does **not** authorize IPA, certify Apple's signature, or prove iOS OTA installation.
+
+Cloudflare CORS policy must permit `PUT` and the `Content-Type` header for the exact branch Preview origin. The browser sends `Content-Length` itself; actual R2 and iOS Safari compatibility must be tested. This test does not enable `R2_PRIVATE_UPLOAD_ENABLED`, `R2_SCANNER_READY` or release operations.
