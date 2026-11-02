@@ -13,6 +13,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run security:check
+      - name: Verify IPA parser with synthetic IPA and CMS
+        run: python3 -m unittest discover -s workers/tests -v
       - run: npm test
       - run: npm run typecheck
       - run: npm run build
