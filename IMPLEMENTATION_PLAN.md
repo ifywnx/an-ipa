@@ -1,41 +1,38 @@
-# Kế hoạch triển khai
+# Implementation Plan — AN IPA STORE (LCSign on iPhone)
 
-## Phase 1 — Audit và nền tảng
+## Ground truth
+`ifywnx/an-ipa` repository + dedicated Supabase project `an-ipa-store`. GitHub main stays protected. Database already has baseline migrations `platform_core`, `privacy_requests` and `harden_phase2_access`; **do not run the abandoned conflicting schema draft**. Existing Admin/Auth are UI placeholders only.
 
-Đã audit repository trống; tạo tài liệu, cấu trúc, ignore và env mẫu. Xác nhận repository theo URL `ifywnx/an-ipa`; tên `an-ipa-store` chưa tồn tại theo API khi audit. GitHub CLI ifywnx có quyền ADMIN. Supabase có kết nối nhưng chưa xác định project đích. Vercel chưa được xác minh.
+## Phase 2 — public store, Admin foundation [partial]
+- Public browses multi-app catalog without login; Admin-only auth remains required.
+- Mobile-first Admin sections for signed IPA import, versions/builds, UDID review, profile change/re-sign checklist.
+- Configure verified Supabase Auth sessions, roles, CSRF, idempotency and per-user rate limits before enabling mutations.
+- Real database RLS integration tests with distinct users; do not re-enable broad publisher permissions.
 
-## Phase 2 — Database, Auth, Store, Admin
+## Phase 3 — signed IPA ingestion [planned, staged code]
+1. iPhone file picker accepts `.ipa`; client checks name/ZIP signature/size only (not signing).
+2. Authenticated Admin gets a resumable/multipart upload grant for private quarantine; size/quota/sha256, MIME and path checks. Never upload via public bucket or write files to Git.
+3. Isolated worker checks ZIP safety; extracts Info.plist and signed profile metadata (XML/binary plist). Reject malformed ZIP, path traversal, zip bombs, duplicate paths, expired profile and invalid entitlements.
+4. Independent cryptographic verification of app signing and profile trust chain. If verifier unavailable or uncertain, remain blocked. Store immutable hash, report, verifier ID and time.
+5. Admin reviews distribution rights and approves each version. Multiple apps, versions and certificates/profiles are supported. Never reuse an approval after IPA hash changes.
 
-Bootstrap UI và domain được tạo; chưa hoàn thành phase. Tạo project Supabase riêng hoặc xác định project được phép dùng. Thiết kế migration cho toàn bộ bảng; chạy local Postgres, RLS tests với anon/user/publisher/admin. Triển khai login, session validation, CSRF, pagination và audit transaction trước bật mutation.
+## Phase 4 — device registration [planned]
+- No-login guest can submit manual UDID with explicit consent, anti-spam and proof-of-control workflow; status pending/unverified. Backend stores encrypted UDID + keyed HMAC for lookup, not plaintext public table.
+- Apple-supported profile-service path only if CMS certificate trust, challenge TTL, atomic single-use, HTTPS, device identity and privacy are verified end-to-end. Do not simulate success.
+- Admin sees masked identifiers and eligibility states; updates profile device list externally with legitimate Apple developer access.
+- Owner imports new provisioning profile into LCSign on iPhone, re-signs existing app, uploads **new IPA** and re-verifies. Site never modifies IPA signing.
 
-## Phase 3 — IPA
+## Phase 5 — OTA installer [planned]
+- Domain function builds XML OTA manifest and an itms-services URL only from a verified, server-issued short-lived grant.
+- Server routes must reload verified IPA hash/profile/UDID/device Apple registration/entitlements and expiry. No unauthenticated "ask for any UDID and install" endpoint.
+- Serve both manifest and artifact over HTTPS with proper content type and bounded access. Test on an authorized real iPhone.
+- For non-Ad-Hoc distribution, establish Apple-allowed channel policy before activation.
 
-Upload quarantine với size limit; sandbox parser và ZIP safety; Info.plist binary/XML; macOS signing verification; kiểm tra profile/entitlements; version uniqueness. Chỉ dùng fixture tổng hợp trong tests, không commit IPA thật.
+## Phase 6 — security and release gate [blocked]
+CI, unit and RLS integration, audit, secrets history scan, upload safety tests, trust-chain signature checks, rights review, Safari/real-device OTA tests, privacy deletion and grant revocation. Preview does not imply production approval.
 
-## Phase 4 — Device
+## Out of scope
+No MacBook signing, no cloud signing, no collection of P12/private key, no LCSign install required on guest devices. A purchased certificate with a one-year date alone does not prove rights to distribute arbitrary IPAs or to devices not provisioned.
 
-Manual request với consent, rate limit và trạng thái unverified; admin evidence review; Apple adapter thật với idempotency và lỗi quota. Enrollment chỉ bật khi kiểm thử chữ ký, challenge, TTL, atomic single-use và replay thành công trên thiết bị thật. Xóa thiết bị phải revoke grants và có retention policy.
-
-## Phase 5 — Distribution
-
-HTTPS manifest, R2 signed URLs, kiểm tra URL, TestFlight/App Store allowlist. Mỗi cấp grant phải tái kiểm tra mọi điều kiện bằng dữ liệu backend đáng tin cậy. Kiểm thử thiết bị ngoài profile, profile hết hạn và thiết bị bị thu hồi.
-
-## Phase 6 — Security gate và deployment
-
-Bắt buộc: build/test/typecheck pass, dependency audit, secret scan toàn lịch sử, RLS integration tests, RBAC/IDOR/CSRF, upload abuse, signing verification trên macOS, enrollment replay, signed URL expiry/revocation, privacy deletion và audit redaction. Thiết lập branch protection + required CI trên GitHub. Preview trước production; production cần cấu hình và kiểm chứng riêng. Bootstrap checks không thay thế security review toàn hệ thống.
-
-## Cần chủ website cung cấp/cấu hình
-
-- Project Supabase đích, auth redirect URLs và email provider.
-- R2 private bucket/CORS và Vercel project/domain.
-- Apple Developer team/quyền API, secret manager và macOS signing worker.
-- Chứng từ quyền phân phối, privacy policy và quy trình xử lý yêu cầu xóa.
-
-Không gửi secrets trong chat hoặc commit. Cấu hình trực tiếp trong secret manager của dịch vụ.
-
-## Nhật ký cập nhật 2026-11-03
-
-- Storefront: trang danh mục, trang chi tiết và tìm kiếm/lọc đã có source. Thiếu kết nối dữ liệu thật và kiểm thử iPhone/Safari.
-- Auth/Admin: giao diện chỉ hiển thị trạng thái khóa, phân quyền domain tests; chưa có phiên người dùng và backend admin.
-- Database: migration nền tảng với RLS deny-by-default đã commit nhưng **chưa chạy trên project nào**. Cần Supabase test project và kiểm thử RLS thật trước áp dụng.
-- Không merge, không production deploy. Chỉ tiếp tục mở quyền khi kiểm tra end-to-end và security gate đạt.
+## Operator requirements
+Use LCSign locally on your own iPhone for each new signature; share only redacted metadata if troubleshooting. Configure R2, verified Auth and a separate verification service through hosting secret manager. Never send secrets into chat or GitHub.
