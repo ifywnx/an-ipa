@@ -1,0 +1,13 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { normalizeUdid, canTransition } from "../src/modules/devices/policy";
+import { otaDenials, type OtaEvidence } from "../src/modules/distribution/policy";
+import { UnconfiguredAppleAdapter } from "../src/modules/apple/adapter";
+const now = new Date("2026-01-01T00:00:00Z");
+const evidence: OtaEvidence = {deviceStatus:"approved",appleRegistered:true,deviceUdid:"SYNTHETIC",profileUdids:["SYNTHETIC"],profileExpiresAt:"2026-02-01T00:00:00Z",signatureVerified:true,entitlementsMatch:true,bundleId:"example.test",profileBundleId:"example.test",distributionAuthorized:true};
+test("format validation rejects arbitrary text",()=>{assert.throws(()=>normalizeUdid("not-a-device")); assert.equal(normalizeUdid("a".repeat(40)),"A".repeat(40));});
+test("user and publisher cannot approve",()=>{for(const role of ["user","publisher",""]) assert.equal(canTransition(role,"pending","approved"),false);});
+test("revocation is terminal",()=>{assert.equal(canTransition("admin","approved","revoked"),true);assert.equal(canTransition("admin","revoked","approved"),false);});
+test("synthetic complete evidence satisfies domain policy only",()=>assert.deepEqual(otaDenials(evidence,now),[]));
+for(const [name,patch] of Object.entries({revoked:{deviceStatus:"revoked"},unregistered:{appleRegistered:false},missingDevice:{profileUdids:[]},expiry:{profileExpiresAt:now.toISOString()},invalidDate:{profileExpiresAt:"invalid"},signature:{signatureVerified:false},entitlement:{entitlementsMatch:false},bundle:{bundleId:"other"},permission:{distributionAuthorized:false}})) test(`OTA denies ${name}`,()=>assert.ok(otaDenials({...evidence,...patch},now).length));
+test("unconfigured Apple fails without simulated registration",async()=>{await assert.rejects(new UnconfiguredAppleAdapter().registerDevice("synthetic","test"),/APPLE_NOT_CONFIGURED/);});

@@ -15,7 +15,7 @@
   },
   "keywords": [],
   "author": "",
-  "type": "commonjs",
+  "type": "module",
   "dependencies": {
     "next": "16.4.4",
     "react": "19.3.1",
