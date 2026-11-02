@@ -1,14 +1,17 @@
 "use client";
 import Link from "next/link";
 import { useState, type ChangeEvent } from "react";
+import {PrivateIpaUpload} from "@/components/private-ipa-upload";
 import { preflightIpa, type IpaPreflight, MAX_IPA_BYTES } from "@/modules/ipa/preflight";
 
 export default function SignedIpaPage() {
   const [info, setInfo] = useState<{ name: string; size: number; check: IpaPreflight } | null>(null);
   const [reading, setReading] = useState(false);
+  const [selectedFile,setSelectedFile] = useState<File|null>(null);
   async function onFile(event: ChangeEvent<HTMLInputElement>) {
     const f = event.currentTarget.files?.[0];
     setInfo(null);
+    setSelectedFile(null);
     if (!f) return;
     setReading(true);
     try {
@@ -16,6 +19,7 @@ export default function SignedIpaPage() {
       const head = new Uint8Array(await f.slice(0, 4).arrayBuffer());
       const check = preflightIpa(f.name, f.size, head);
       setInfo({ name: f.name, size: f.size, check });
+      if(check.ok)setSelectedFile(f);
     } catch {
       setInfo({ name: f.name, size: f.size, check: { ok: false, detail: "Không đọc được header tệp." } });
     } finally { setReading(false); }
@@ -36,8 +40,9 @@ export default function SignedIpaPage() {
         <p>{(info.size/(1024*1024)).toFixed(1)} MiB · {info.check.ok ? "Đạt kiểm tra sơ bộ" : "Không đạt kiểm tra sơ bộ"}</p>
         <p>{info.check.detail}</p>
       </div>}
-      <div className="notice-inline" role="note"><strong>Chưa bật upload thật.</strong>
-      <p>Máy chủ chưa nhận tệp. Chỉ mở upload sau khi Auth Admin, private quarantine, quota, quét ZIP và xác minh chữ ký độc lập hoạt động. Không tải P12 hoặc private key lên đây.</p></div>
+      <PrivateIpaUpload file={selectedFile}/>
+      <div className="notice-inline" role="note"><strong>Chưa mở upload cho người dùng thật.</strong>
+      <p>Upload vào R2 vẫn bị khóa mặc định. Khi có đầy đủ hạ tầng, tệp chỉ vào vùng cách ly; kiểm tra ZIP, chữ ký và provisioning profile phải hoàn tất mới có thể xét xuất bản. Không gửi P12 hoặc private key.</p></div>
     </div>
     <div className="panel">
       <h2>Khi thêm UDID mới</h2>
