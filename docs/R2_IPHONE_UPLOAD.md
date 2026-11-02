@@ -40,3 +40,11 @@ See [Tạo Cloudflare R2 riêng tư](R2_CLOUDFLARE_SETUP_VI.md) for Cloudflare D
 A read-only `GET /api/admin/storage/health` route is available only to authenticated Admin on Vercel Preview when `R2_STORAGE_DIAGNOSTICS_ENABLED=true` (Preview branch-scoped). It sends a signed 60-second **HEAD Bucket** directly from server to R2; only fixed status messages reach the browser, no access keys or presigned URLs. No IPA object is created. Cloudflare R2 supports HeadBucket.
 
 This status cannot confirm bucket CORS, object upload permissions, isolated scanner or Apple signing; upload flags remain OFF. Do not enable diagnostic in production.
+
+## Private R2 write test (Preview only)
+
+The Admin page has a separate **write / HEAD / delete synthetic sample** button. The server-only `POST /api/admin/storage/write-test` is behind exact same-origin, a freshly verified Admin session, Vercel Preview and a separate `R2_WRITE_DIAGNOSTICS_ENABLED` flag. The test writes at most 256 bytes of synthetic text to a **random UUID path** under `diagnostics/`, verifies `HEAD Object` content length, and then tries `DELETE Object` even when the write response failed. `If-None-Match: *` prevents overwriting an existing object.
+
+The browser only sees fixed status codes; it never receives R2 credentials, URLs, object names or payload. If deletion fails, the endpoint fails closed and the operator must inspect `diagnostics/` for leftovers; configure lifecycle expiry for diagnostics as defense in depth.
+
+A successful test checks server-side Object Read/Write/Delete only. It **does not validate CORS, Safari uploads, Ad Hoc profile, code signature, IPA authenticity or OTA eligibility**. The R2 IPA upload feature flags remain OFF. Disable `R2_WRITE_DIAGNOSTICS_ENABLED` after testing.
