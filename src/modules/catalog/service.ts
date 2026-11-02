@@ -1,29 +1,38 @@
 import type { CatalogResult, PublicApp } from "./types";
 
-/** Only anonymous, published metadata is queried. No privileged credential is used. */
+/**
+ * Public metadata only. Never use privileged credentials here.
+ * The canonical live schema uses name/developer/description/published (not title/status).
+ */
 function config(): { origin: string; key: string } | null {
   const origin = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!origin || !key) return null;
   try {
     const parsed = new URL(origin);
-    if (parsed.protocol !== "https:" || parsed.username || parsed.password) return null;
+    if (parsed.protocol !== "https:" || parsed.username || parsed.password || parsed.pathname !== "/") return null;
     return { origin: parsed.origin, key };
   } catch { return null; }
 }
 export const validSlug = (value: string): boolean =>
-  /^[a-z0-9](?:[a-z0-9-]{0,62}[a-z0-9])?$/.test(value);
+  value.length <= 80 && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
 
 export function parsePublicApps(value: unknown): PublicApp[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((row: unknown) => {
     if (!row || typeof row !== "object") return [];
     const r = row as Record<string, unknown>;
-    const keys = ["slug", "title", "summary", "category", "developer_name"] as const;
+    const keys = ["slug", "name", "description", "category", "developer"] as const;
     if (!keys.every(k => typeof r[k] === "string")) return [];
-    const app = Object.fromEntries(keys.map(k => [k, r[k]])) as unknown as PublicApp;
-    if (!validSlug(app.slug) || app.title.length > 140 || app.summary.length > 1000) return [];
-    return [app];
+    const slug = r.slug as string;
+    const title = r.name as string;
+    const summary = r.description as string;
+    const category = r.category as string;
+    const developer_name = r.developer as string;
+    if (!validSlug(slug) || !title || title.length > 120 ||
+      summary.length > 10000 || !category || category.length > 60 ||
+      !developer_name || developer_name.length > 120) return [];
+    return [{ slug, title, summary, category, developer_name }];
   });
 }
 
@@ -34,8 +43,8 @@ async function queryPublished(
   if (!settings) return { state: "unconfigured", data: [] };
   if (slug !== undefined && !validSlug(slug)) return { state: "available", data: [] };
   const endpoint = new URL("/rest/v1/apps", settings.origin);
-  endpoint.searchParams.set("select", "slug,title,summary,category,developer_name");
-  endpoint.searchParams.set("status", "eq.published");
+  endpoint.searchParams.set("select", "slug,name,description,category,developer");
+  endpoint.searchParams.set("published", "eq.true");
   endpoint.searchParams.set("order", "created_at.desc");
   endpoint.searchParams.set("limit", slug ? "1" : "100");
   if (slug) endpoint.searchParams.set("slug", "eq." + slug);
@@ -49,9 +58,7 @@ async function queryPublished(
     const json: unknown = await response.json();
     if (!Array.isArray(json)) return { state: "unavailable", data: [] };
     return { state: "available", data: parsePublicApps(json) };
-  } catch {
-    return { state: "unavailable", data: [] };
-  }
+  } catch { return { state: "unavailable", data: [] }; }
 }
 export async function listPublicApps(transport?: typeof fetch) {
   return queryPublished(undefined, transport);
