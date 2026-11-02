@@ -25,3 +25,7 @@ No private IPA is committed. CI builds **synthetic** CMS certificates and IPA fi
 3. Real Apple chain trust, codesign verification including nested binaries, embedded profile/device entitlements, and immutable content-hash attestation.
 4. Persistent multiversion registry and Admin UI showing blocked versus verified status.
 5. RLS/IDOR/CSRF checks, malicious archive fuzzing, test IPA authorized by developer, and physical iPhone OTA validation.
+
+## Current CI
+
+GitHub CI runs `python3 -m unittest discover -s workers/tests -v` before Node unit tests, TypeScript and Next.js build. This checks synthetic CMS and unsafe ZIP structures only; neither simulated tests nor the inspector can replace validating real LCSign-signed IPA on authorized devices.

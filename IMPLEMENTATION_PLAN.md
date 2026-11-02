@@ -36,3 +36,17 @@ No MacBook signing, no cloud signing, no collection of P12/private key, no LCSig
 
 ## Operator requirements
 Use LCSign locally on your own iPhone for each new signature; share only redacted metadata if troubleshooting. Configure R2, verified Auth and a separate verification service through hosting secret manager. Never send secrets into chat or GitHub.
+
+## Phase 3 offline IPA inspection progress — 2026-11-03
+
+- Implemented offline Python archive parser for signed LCSign IPA files: ZIP safety, binary/XML Info.plist, CMS integrity-only embedded.mobileprovision metadata, Ad Hoc UDID count, bundle/version/build checks.
+- CI now executes synthetic malicious-archive and synthetic-CMS tests. This is *not* a web upload endpoint or trusted Apple code-sign verification.
+- `docs/IPA_INSPECTION.md` describes worker isolation, missing Apple trust chain and prohibited OTA approval from inspection alone.
+
+## Privacy/retention progress — 2026-11-03
+
+- Supabase migration `purge_expired_device_intake` applied; service-role-only RPC can purge expired guest enrollment and manually submitted UDID requests.
+- Added disabled-by-default `POST /api/internal/retention` protected by server-only bearer secret. Scheduling has **not been configured**.
+- Still required: configured scheduler, end-to-end deletion tests and encrypted manual/admin lifecycle review.
+
+**Final gate remains blocked:** Admin Auth/RBAC, real iPhone upload, trusted profile+code signature worker, Profile Service/SCEP and physical iPhone OTA tests.
