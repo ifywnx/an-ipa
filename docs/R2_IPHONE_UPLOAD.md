@@ -34,3 +34,9 @@ References:
 ## Operator setup (Vietnamese)
 
 See [Tạo Cloudflare R2 riêng tư](R2_CLOUDFLARE_SETUP_VI.md) for Cloudflare Dashboard setup, exact Preview CORS origin, private API token scope, and safety gates.
+
+## Admin-only R2 connectivity diagnostics
+
+A read-only `GET /api/admin/storage/health` route is available only to authenticated Admin on Vercel Preview when `R2_STORAGE_DIAGNOSTICS_ENABLED=true` (Preview branch-scoped). It sends a signed 60-second **HEAD Bucket** directly from server to R2; only fixed status messages reach the browser, no access keys or presigned URLs. No IPA object is created. Cloudflare R2 supports HeadBucket.
+
+This status cannot confirm bucket CORS, object upload permissions, isolated scanner or Apple signing; upload flags remain OFF. Do not enable diagnostic in production.

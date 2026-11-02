@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { useState, type ChangeEvent } from "react";
 import {PrivateIpaUpload} from "@/components/private-ipa-upload";
+import {R2ConnectionCheck} from "@/components/r2-connection-check";
 import { preflightIpa, type IpaPreflight, MAX_IPA_BYTES } from "@/modules/ipa/preflight";
 
 export default function SignedIpaPage() {
@@ -40,6 +41,7 @@ export default function SignedIpaPage() {
         <p>{(info.size/(1024*1024)).toFixed(1)} MiB · {info.check.ok ? "Đạt kiểm tra sơ bộ" : "Không đạt kiểm tra sơ bộ"}</p>
         <p>{info.check.detail}</p>
       </div>}
+      <R2ConnectionCheck/>
       <PrivateIpaUpload file={selectedFile}/>
       <div className="notice-inline" role="note"><strong>Chưa mở upload cho người dùng thật.</strong>
       <p>Upload vào R2 vẫn bị khóa mặc định. Khi có đầy đủ hạ tầng, tệp chỉ vào vùng cách ly; kiểm tra ZIP, chữ ký và provisioning profile phải hoàn tất mới có thể xét xuất bản. Không gửi P12 hoặc private key.</p></div>

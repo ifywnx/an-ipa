@@ -58,3 +58,30 @@ export function presignPrivateIpaPut(
  return {url:"https://"+host+path+"?"+query+"&X-Amz-Signature="+signature,
   headers:{"Content-Type":"application/octet-stream"},objectKey,expiresIn:300};
 }
+
+
+/** Short-lived S3 HeadBucket URL, invoked SERVER SIDE only (no object writes). */
+export function presignPrivateR2HeadBucket(
+ config:PrivateR2,now=new Date()
+):string{
+ if(!validateR2(config))throw Error("Invalid R2 configuration");
+ if(!Number.isFinite(now.getTime()))throw Error("Invalid timestamp");
+ const host=config.accountId.toLowerCase()+".r2.cloudflarestorage.com";
+ const path="/"+enc(config.bucket);
+ const date=now.toISOString().replace(/[:-]|\.\d{3}/g,"");
+ const day=date.slice(0,8),scope=day+"/auto/s3/aws4_request";
+ const fields:Record<string,string>={
+  "X-Amz-Algorithm":"AWS4-HMAC-SHA256",
+  "X-Amz-Content-Sha256":"UNSIGNED-PAYLOAD",
+  "X-Amz-Credential":config.accessKeyId+"/"+scope,
+  "X-Amz-Date":date,
+  "X-Amz-Expires":"60",
+  "X-Amz-SignedHeaders":"host"
+ };
+ const query=Object.entries(fields).map(([k,v])=>enc(k)+"="+enc(v)).sort().join("&");
+ const canonical="HEAD\n"+path+"\n"+query+"\nhost:"+host+"\n\nhost\nUNSIGNED-PAYLOAD";
+ const stringToSign="AWS4-HMAC-SHA256\n"+date+"\n"+scope+"\n"+sha256(canonical);
+ const signingKey=hmac(hmac(hmac(hmac("AWS4"+config.secretAccessKey,day),"auto"),"s3"),"aws4_request");
+ const signature=createHmac("sha256",signingKey).update(stringToSign).digest("hex");
+ return "https://"+host+path+"?"+query+"&X-Amz-Signature="+signature;
+}
