@@ -70,7 +70,7 @@ class WorkerSafetyTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.object(worker, "secure_opener") as opener:
                 opener.return_value.open.return_value = Response(body + b"B")
-                with self.assertRaisesRegex(worker.WorkerError, "OBJECT_LENGTH_MISMATCH"):
+                with self.assertRaisesRegex(worker.WorkerError, "OBJECT_TOO_LARGE"):
                     worker.download_to_quarantine(self.cfg, self.claim, Path(tmp)/"test.ipa")
 
     def test_worker_never_approves_ota_even_on_valid_metadata(self):
