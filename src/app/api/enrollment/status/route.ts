@@ -24,3 +24,22 @@ export async function GET(request:NextRequest) {
     return Response.json({status:"unavailable"},{status:503,headers:enrollmentHeaders});
   }
 }
+
+/** Explicit guest data deletion; same-origin only; browser may request it anytime in valid session. */
+export async function DELETE(request:NextRequest) {
+  const config=getEnrollmentConfig();
+  if(!config) return unavailable();
+  if(request.headers.get("origin")!==config.appOrigin)
+    return Response.json({deleted:false},{status:403,headers:enrollmentHeaders});
+  const token=request.cookies.get("an_enrollment")?.value;
+  if(!token || !/^[A-Za-z0-9_-]{40,64}$/.test(token))
+    return Response.json({deleted:false},{status:400,headers:enrollmentHeaders});
+  try {
+    await enrollmentDb<unknown>(config,
+      "guest_enrollments?browser_token_hash=eq."+tokenHash(token),
+      {method:"DELETE",headers:{"Prefer":"return=minimal"}});
+  } catch {return Response.json({deleted:false},{status:503,headers:enrollmentHeaders});}
+  const response=Response.json({deleted:true},{headers:enrollmentHeaders});
+  response.headers.append("Set-Cookie","an_enrollment=; Path=/api/enrollment; Max-Age=0; HttpOnly; Secure; SameSite=Lax");
+  return response;
+}

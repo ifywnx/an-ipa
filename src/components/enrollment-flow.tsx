@@ -61,6 +61,14 @@ export function EnrollmentFlow() {
       setUrl(parsed.toString());setPhase("pending");
     } catch {setReason("Không kết nối được đến dịch vụ xác minh.");setPhase("error");}
   }
+
+  async function remove() {
+    try {
+      const result=await fetch("/api/enrollment/status",{method:"DELETE",credentials:"same-origin"});
+      if (!result.ok) throw new Error("Not deleted");
+      setUdid(null);setUrl(null);setConsent(false);setCopied(false);setPhase("initial");setReason("");
+    } catch {setReason("Không xóa được phiên lúc này. Hãy thử lại hoặc liên hệ hỗ trợ.");}
+  }
   async function copy() {
     if (!udid) return;
     try {await navigator.clipboard.writeText(udid);setCopied(true);}
@@ -102,6 +110,8 @@ export function EnrollmentFlow() {
         {phase==="expired" && <p className="enroll-alert" role="status">Phiên đã hết hạn. Hãy tạo phiên mới nếu vẫn muốn tiếp tục.</p>}
         {(phase==="error" || phase==="offline") && <p className="enroll-alert" role="status">{reason||"Tính năng enrollment chưa sẵn sàng. Không có profile giả được tải về."}</p>}
       </>}
+
+      {(phase==="verified" || phase==="pending" || phase==="expired") && <button type="button" className="enroll-remove" onClick={()=>void remove()}>Xóa dữ liệu phiên này</button>}
       {reason && phase==="verified" && <p className="enroll-alert">{reason}</p>}
       <p className="enroll-privacy">Chỉ hiển thị kết quả từ server sau khi xác minh thực. Mã phiên có thời hạn; không có UDID giả hoặc hoàn thành giả.</p>
     </aside>

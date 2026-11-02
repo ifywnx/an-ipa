@@ -40,3 +40,8 @@ A physical iPhone and working CMS/SCEP provider are required. Test: Safari open 
 No trusted Profile Service/SCEP provider endpoint or proof of iOS device compatibility has been configured. The /udid UI deliberately shows an unavailable error rather than a fake downloadable profile. The current API verifies a provider's **attestation**, not Apple's CMS itself; do not claim native CMS verification in the web app.
 
 The session table holds short-lived encrypted identifiers. A permanent, consensual device registration and admin-management workflow must be implemented separately, with retention/deletion and authenticated role checks. No persistent public UDID store is enabled yet.
+
+## Privacy and retention
+- The browser holding the short-lived enrollment cookie can invoke `DELETE /api/enrollment/status` to remove its own guest session; the route checks same-origin and removes the cookie.
+- No long-lived UDID copy is automatically created for Admin. User consent for persistent registration and encrypted device records will be implemented separately.
+- The current 8-minute expiration prevents web access to old UDIDs but does not itself delete expired rows. An operational purge job and deletion verification are still **required before production**.
