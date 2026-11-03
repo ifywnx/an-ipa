@@ -143,8 +143,9 @@ export async function testSyntheticPipeline(id:string){
 }
 
 export async function lifecycleDiagnostic(){
- const {presignLifecycleRead}=await import('./r2-objects');
- const response=await fetch(presignLifecycleRead(config().r2),{redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000)});
+ const {signLifecycleRead}=await import('./r2-objects');
+ const request=signLifecycleRead(config().r2);
+ const response=await fetch(request.url,{headers:request.headers,redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000)});
  // Return only availability, not bucket configuration, credentials or signed URL.
  await response.body?.cancel();
  return {lifecycleReadable:response.ok,lifecycleStatus:response.status,lifecyclePolicyVerified:false};
