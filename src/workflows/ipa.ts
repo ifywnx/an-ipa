@@ -39,3 +39,16 @@ async function testRuntime(){
  const {sandboxSelfTest}=await import('@/modules/worker/server');
  return sandboxSelfTest();
 }
+
+export async function testQuarantinePipeline(id:string){
+ 'use workflow';
+ return await testSynthetic(id);
+}
+async function testSynthetic(id:string){
+ 'use step';
+ const {testSyntheticPipeline}=await import('@/modules/worker/server');
+ return testSyntheticPipeline(id);
+}
+// Synthetic diagnostic side effects are not automatically retried. Create a new
+// marked receipt for a new diagnostic; normal scans retain their leased retries.
+testSynthetic.maxRetries=0;
