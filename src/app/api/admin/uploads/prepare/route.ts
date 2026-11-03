@@ -1,3 +1,4 @@
+import {workerConfigured} from "@/modules/worker/server";
 import {NextRequest} from "next/server";
 import {adminConfig,verifiedAdmin} from "@/modules/auth/admin-server";
 import {ADMIN_COOKIE,unsealAdminSession,sameOrigin} from "@/modules/auth/session";
@@ -17,7 +18,7 @@ export async function POST(request:NextRequest){
  if(!cfg||process.env.R2_PRIVATE_UPLOAD_ENABLED!=="true"||
    process.env.R2_PRIVATE_WAF_READY!=="true"||
    process.env.R2_QUARANTINE_LIFECYCLE_READY!=="true"||
-   process.env.R2_SCANNER_READY!=="true")return fail("UPLOAD_NOT_READY",503);
+   process.env.R2_SCANNER_READY!=="true"||!workerConfigured())return fail("UPLOAD_NOT_READY",503);
  if(!sameOrigin(request.headers.get("origin"),cfg.origin)||
    !request.headers.get("content-type")?.startsWith("application/json"))
    return fail("INVALID_ORIGIN",403);

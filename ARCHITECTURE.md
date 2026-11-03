@@ -51,3 +51,10 @@ Next.js/TypeScript storefront + admin, Supabase Auth/Postgres RLS for trusted me
 - https://developer.apple.com/help/account/provisioning-profiles/edit-download-or-delete-profiles
 - https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/profile-service/profile-service.html
 - https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles
+
+## Vercel worker (Phase 4)
+
+See [Vercel worker](docs/VERCEL_WORKER.md). Durable Workflow orchestrates temporary
+Sandbox microVMs. Only per-object signed GET URLs enter the parser environment;
+service credentials remain in Vercel Functions. Metadata success remains quarantined.
+Supabase owns scan/cleanup leases and retry budget. R2 lifecycle remains a release gate.

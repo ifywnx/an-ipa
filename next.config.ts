@@ -1,6 +1,10 @@
+import {withWorkflow} from "workflow/next";
 import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
+  turbopack: {root: process.cwd()},
+  outputFileTracingRoot: process.cwd(),
+  outputFileTracingIncludes: {"/*": ["./workers/**/*.py"]},
   async headers() { return [{ source: "/(.*)", headers: [
     {key:"X-Content-Type-Options",value:"nosniff"},
     {key:"X-Frame-Options",value:"DENY"},
@@ -8,4 +12,4 @@ const config: NextConfig = {
     {key:"Permissions-Policy",value:"camera=(), microphone=(), geolocation=()"}
   ]}]; }
 };
-export default config;
+export default withWorkflow(config);

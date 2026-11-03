@@ -56,3 +56,13 @@ Use LCSign locally on your own iPhone for each new signature; share only redacte
 - Admin password login API and server-side guarded routes implemented using verified Supabase Auth user and current roles table, encrypted short-lived session, no public signup. Hosting flags remain disabled until admin account / HTTPS WAF and rate-limit tests.
 - R2 signed PUT API + mobile iPhone upload UI now exists, **disabled** by default, 100 MiB single-part pilot. Requires quarantine lifecycle, per-admin rate limits, R2 bucket+CORS and working automatic signature scanner; see `docs/R2_IPHONE_UPLOAD.md`.
 - No upload success marks IPA installable; independent signer verification and Apple policy checks remain mandatory. Larger IPA require multipart/resumable.
+
+## Phase 4 continuation — Vercel
+
+Implemented durable Workflow + isolated Sandbox integration, service-only targeted
+claims/cleanup RPCs, backoff, Admin health/history and synthetic runtime test.
+Local build, 58 TypeScript tests, 16 Python tests and rollback SQL assertions pass.
+Actual Vercel Sandbox synthetic suite passes. Preview workflow validation is pending.
+Phases 5–7 remain gated by trusted Apple verification, real IPA/iPhone tests,
+R2 lifecycle and completion of application publication/permissions management.
+No FINAL claim; no production/main change.

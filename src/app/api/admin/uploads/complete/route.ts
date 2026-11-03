@@ -1,4 +1,6 @@
 import "server-only";
+import {enqueueReceipt} from "@/modules/worker/enqueue";
+import {workerConfigured} from "@/modules/worker/server";
 import {NextRequest} from "next/server";
 import {adminConfig,verifiedAdmin} from "@/modules/auth/admin-server";
 import {ADMIN_COOKIE,unsealAdminSession,sameOrigin} from "@/modules/auth/session";
@@ -12,7 +14,7 @@ export async function POST(request:NextRequest){
  if(!cfg||process.env.R2_PRIVATE_UPLOAD_ENABLED!=="true"||
    process.env.R2_PRIVATE_WAF_READY!=="true"||
    process.env.R2_QUARANTINE_LIFECYCLE_READY!=="true"||
-   process.env.R2_SCANNER_READY!=="true")return fail("UPLOAD_NOT_READY",503);
+   process.env.R2_SCANNER_READY!=="true"||!workerConfigured())return fail("UPLOAD_NOT_READY",503);
  if(!sameOrigin(request.headers.get("origin"),cfg.origin)||
    !request.headers.get("content-type")?.startsWith("application/json"))
    return fail("INVALID_ORIGIN",403);
@@ -40,6 +42,7 @@ export async function POST(request:NextRequest){
   if(!response.ok)return fail("INTAKE_ACK_UNAVAILABLE",503);
   const result:unknown=await response.json();
   if(result!==true)return fail("INTAKE_NOT_FOUND_OR_EXPIRED",409);
+  try{await enqueueReceipt(receiptId);}catch{return fail("WORKER_QUEUE_UNAVAILABLE_RETRY_FROM_ADMIN",503);}
   return Response.json({ok:true,state:"uploaded_pending_scan",
     message:"Lượt upload đã ghi nhận. Worker sẽ kiểm tra file thực tế; chưa được cấp OTA."},{headers});
  }catch{return fail("INTAKE_ACK_UNAVAILABLE",503);}

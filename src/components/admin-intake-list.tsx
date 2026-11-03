@@ -1,7 +1,7 @@
 "use client";
 import {useCallback,useEffect,useState} from "react";
 type ScanSummary={bundle_id?:string;version?:string;build?:string;profile_type?:string;ad_hoc_device_count?:number};
-type Intake={id:string;filename:string;expected_bytes:number;state:string;created_at:string;expires_at:string;scan_finished_at?:string|null;scan_error?:string|null;scan_report?:ScanSummary|null;sha256_verified?:string|null};
+type Intake={id:string;filename:string;expected_bytes:number;state:string;created_at:string;expires_at:string;scan_finished_at?:string|null;scan_error?:string|null;scan_report?:ScanSummary|null;scan_attempts?:number;delete_after?:string;object_deleted_at?:string|null;cleanup_error?:string|null;sha256_verified?:string|null};
 const names:Record<string,string>={
  reserved:"Đã cấp lượt tải — chưa có xác nhận file",
  uploaded_pending_scan:"Trình duyệt báo tải xong — chờ worker xác minh file",
@@ -26,6 +26,10 @@ export function AdminIntakeList(){
   finally{setBusy(false);}
  },[]);
  useEffect(()=>{void load();},[load]);
+ async function resume(id:string){
+  setBusy(true);
+  try{const r=await fetch('/api/admin/worker',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'retry',receiptId:id})});setMessage(r.ok?'Đã kiểm tra lịch xử lý. Worker vẫn áp dụng giới hạn số lần thử.':'Không thể tiếp tục xử lý.');}catch{setMessage('Không kết nối được tới worker.');}finally{setBusy(false);}
+ }
  return <div className="panel">
   <div className="section-title">
    <h2>Phiên tiếp nhận IPA riêng tư</h2>
@@ -42,6 +46,9 @@ export function AdminIntakeList(){
     {item.scan_report?.bundle_id&&<p className="small-muted">Bundle: {item.scan_report.bundle_id} · v{item.scan_report.version||"?"} ({item.scan_report.build||"?"}) · Profile: {item.scan_report.profile_type||"chưa rõ"}</p>}
     {item.scan_error&&<p className="small-muted">Mã kiểm tra: {item.scan_error}</p>}
     {item.sha256_verified&&<p className="small-muted">SHA-256: {item.sha256_verified.slice(0,16)}… · Chỉ kiểm tra dữ liệu, không xác thực Apple</p>}
+    <p className="small-muted">Lượt quét: {item.scan_attempts||0}/3 · Chữ ký Apple: chưa xác minh · OTA: chưa cấp phép</p>
+    {item.object_deleted_at?<p className="small-muted">Đã xóa file khỏi kho cách ly.</p>:item.delete_after&&<p className="small-muted">Hạn lưu file: {new Date(item.delete_after).toLocaleString("vi-VN")}{item.cleanup_error?' · Xóa file cần kiểm tra: '+item.cleanup_error:''}</p>}
+    {item.state==='uploaded_pending_scan'&&<button className="secondary-button" disabled={busy} onClick={()=>void resume(item.id)}>Tiếp tục xử lý</button>}
     <p className="small-muted">Tạo lúc {new Date(item.created_at).toLocaleString("vi-VN")} · Mã: {item.id.slice(0,8)}</p>
   </article>)}
  </div>;
