@@ -79,3 +79,23 @@ Applied Supabase history: `20261102235950 vercel_worker_operations`; catalog
 RPC history: `20261103001543 admin_catalog_drafts`. CLI-created local filenames
 differ from server-assigned history versions; do not blindly replay migrations
 against this existing project.
+
+## Credential rotation and full synthetic pipeline verification
+
+Owner confirmed rotation. On Git Preview `c2bf286`, run
+`wrun_41M6FPX7WR0GJGVF28W8Y9MKT4` completed backend + Sandbox self-test.
+Run `wrun_41M6FPXRZ60GGHY5BRPTR5YM3C` then completed the 123-byte R2 pipeline:
+PUT succeeded; overwrite replay was rejected; Sandbox rejected INVALID_ZIP_ARCHIVE;
+Supabase recorded one scan attempt with both trust/eligibility false; leased cleanup
+removed the object and a signed GET returned 404. This supersedes the earlier
+credential gate. It is a synthetic infrastructure test, not a real IPA acceptance test.
+
+Bucket lifecycle must use signed request headers, not object-presigned URLs.
+On `bdf1625`, runtime test `wrun_41M6H1DQEQ0GHWD1AJFHVHJN33` passed but the
+read-only lifecycle API returned 403. Existing object credentials have insufficient
+bucket-management access. Cloudflare browser login is required to inspect/configure
+lifecycle without broadening the runtime key. Upload flags remain closed.
+
+One API redeployment became READY but its Workflow probe did not respond; its two
+pending diagnostic runs were cancelled. The subsequent Git deployment's workflow
+probe and jobs succeeded. Diagnostic script now probes readiness before starting.

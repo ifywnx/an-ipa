@@ -62,7 +62,7 @@ Use LCSign locally on your own iPhone for each new signature; share only redacte
 Implemented durable Workflow + isolated Sandbox integration, service-only targeted
 claims/cleanup RPCs, backoff, Admin health/history and synthetic runtime test.
 Local build, 58 TypeScript tests, 16 Python tests and rollback SQL assertions pass.
-Actual Vercel Sandbox synthetic suite passes. Preview workflow validation is pending.
+Actual Vercel Sandbox synthetic suite passes. Preview Workflow → Sandbox and a complete synthetic R2 upload/replay/rejection/cleanup run now pass.
 Phases 5–7 remain gated by trusted Apple verification, real IPA/iPhone tests,
 R2 lifecycle and completion of application publication/permissions management.
 No FINAL claim; no production/main change.
