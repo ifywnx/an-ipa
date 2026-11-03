@@ -4,20 +4,23 @@ import {readFile,readdir} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {validateR2,type PrivateR2} from '@/modules/ipa/r2-presign';
 import {presignWorkerObject,receiptPattern} from './r2-objects';
+import {validBackendSecret} from './secret-format';
 const files=['ipa_inspector.py','quarantine_worker.py','sandbox_scan.py'];
 export function workerConfigured(){return process.env.IPA_VERCEL_WORKER_ENABLED==='true'&&!!process.env.SUPABASE_SECRET_KEY;}
 function config(){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL||'';
  const secret=process.env.SUPABASE_SECRET_KEY||'';
  const r2:PrivateR2={accountId:process.env.R2_ACCOUNT_ID||'',bucket:process.env.R2_BUCKET||'',accessKeyId:process.env.R2_ACCESS_KEY_ID||'',secretAccessKey:process.env.R2_SECRET_ACCESS_KEY||''};
- if(!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(url)||!secret||!validateR2(r2))throw Error('WORKER_CONFIG_MISSING');
+ if(!/^https:\/\/[a-z0-9]+\.supabase\.co$/.test(url)||!validBackendSecret(secret)||!validateR2(r2))throw Error('WORKER_CONFIG_MISSING');
  return {url,secret,r2};
 }
 export async function workerRequest(path:string,body?:unknown,method='POST'){
  const c=config();
  const headers:Record<string,string>={apikey:c.secret,'Content-Type':'application/json','Prefer':'return=representation'};
  if(!c.secret.startsWith('sb_secret_'))headers.Authorization='Bearer '+c.secret;
- const response=await fetch(c.url+'/rest/v1/'+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(10000),redirect:'error'});
+ let response:Response;
+ try{response=await fetch(c.url+'/rest/v1/'+path,{method,headers,body:body===undefined?undefined:JSON.stringify(body),cache:'no-store',signal:AbortSignal.timeout(10000),redirect:'error'});}
+ catch{throw Error('WORKER_DATABASE_TRANSPORT_FAILED');}
  if(!response.ok)throw Error('WORKER_DATABASE_UNAVAILABLE');
  const raw=await response.text();if(raw.length>65536)throw Error('WORKER_DATABASE_RESPONSE_LIMIT');
  return raw?JSON.parse(raw):null;

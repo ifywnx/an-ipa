@@ -23,12 +23,12 @@ export async function processIpaReceipt(id:string){
 async function inspectReceipt(id:string){
  'use step';
  const {scanReceiptOnce}=await import('@/modules/worker/server');
- return scanReceiptOnce(id);
+ try{return await scanReceiptOnce(id);}catch{throw Error('SCAN_STEP_FAILED');}
 }
 async function deleteExpiredReceipt(id:string){
  'use step';
  const {cleanupReceipt}=await import('@/modules/worker/server');
- return cleanupReceipt(id);
+ try{return await cleanupReceipt(id);}catch{throw Error('CLEANUP_STEP_FAILED');}
 }
 export async function testWorkerRuntime(){
  'use workflow';
@@ -37,7 +37,7 @@ export async function testWorkerRuntime(){
 async function testRuntime(){
  'use step';
  const {sandboxSelfTest}=await import('@/modules/worker/server');
- return sandboxSelfTest();
+ try{return await sandboxSelfTest();}catch{throw Error('SELF_TEST_STEP_FAILED');}
 }
 
 export async function testQuarantinePipeline(id:string){
@@ -47,7 +47,7 @@ export async function testQuarantinePipeline(id:string){
 async function testSynthetic(id:string){
  'use step';
  const {testSyntheticPipeline}=await import('@/modules/worker/server');
- return testSyntheticPipeline(id);
+ try{return await testSyntheticPipeline(id);}catch{throw Error('SYNTHETIC_PIPELINE_FAILED');}
 }
 // Synthetic diagnostic side effects are not automatically retried. Create a new
 // marked receipt for a new diagnostic; normal scans retain their leased retries.
