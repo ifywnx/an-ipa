@@ -66,3 +66,11 @@ Actual Vercel Sandbox synthetic suite passes. Preview workflow validation is pen
 Phases 5–7 remain gated by trusted Apple verification, real IPA/iPhone tests,
 R2 lifecycle and completion of application publication/permissions management.
 No FINAL claim; no production/main change.
+
+## Admin catalog continuation
+
+Implemented authenticated draft create/edit/hide and audit history. Database RPC
+checks a confirmed, non-banned Admin, rejects publication fields, limits mutations,
+and prevents stale edits. Public catalog cannot read drafts or rights notes.
+Rollback integration tests pass for all of those paths. Publishing and IPA linking
+remain gated, with no manufactured signature/device evidence.

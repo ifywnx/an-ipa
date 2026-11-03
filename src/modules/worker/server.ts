@@ -6,7 +6,7 @@ import {validateR2,type PrivateR2} from '@/modules/ipa/r2-presign';
 import {presignWorkerObject,receiptPattern} from './r2-objects';
 import {validBackendSecret} from './secret-format';
 const files=['ipa_inspector.py','quarantine_worker.py','sandbox_scan.py'];
-export function workerConfigured(){return process.env.IPA_VERCEL_WORKER_ENABLED==='true'&&!!process.env.SUPABASE_SECRET_KEY;}
+export function workerConfigured(){return process.env.IPA_VERCEL_WORKER_ENABLED==='true'&&validBackendSecret(process.env.SUPABASE_SECRET_KEY||'');}
 function config(){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL||'';
  const secret=process.env.SUPABASE_SECRET_KEY||'';

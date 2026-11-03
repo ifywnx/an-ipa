@@ -47,3 +47,30 @@ and deletion with synthetic rows in a rolled-back transaction.
 - R2 lifecycle and upload overwrite/replay protection must be verified before enabling uploads.
 - Worker status is visible in Admin; external alert delivery is not configured.
 - No production rollout or merge to main is authorized until release gates pass.
+
+## Verified Preview evidence (2026-11-03)
+
+- GitHub CI and Preview build pass for `f287593` and subsequent worker changes.
+- Deployed workflow `wrun_41M6FBQYQX0GKCF8CS9RG5EFTM` completed the real
+  Sandbox self-test (16 Python tests, deny-all networking).
+- Protected Preview `/api/health`: 200; unauthenticated application calls to
+  `/api/admin/worker` and `/api/admin/uploads/intakes`: 401 through Vercel CLI.
+- Supabase rollback integration assertions for leases/backoff/cleanup pass.
+- Full synthetic R2 pipeline is NOT yet verified: the first run failed before
+  upload because a configured backend key contained an embedded newline.
+  HTTP error text included the credential. Owner was instructed to revoke/rotate
+  it; temporary local error files were deleted. Do not reuse that key.
+- Backend credentials are now format-validated before Header construction;
+  workflow step boundaries replace unexpected errors with fixed safe codes.
+- Conditional `If-None-Match: *` is signed for all IPA PUTs. Actual R2 rejection
+  of replay and Safari CORS with this header are pending verification.
+
+After key rotation, redeploy Preview to load the new key, then run
+`scripts/test-preview-workflow.mjs DEPLOYMENT_ID` for DB + runtime diagnostics.
+For the complete synthetic pipeline, an operator creates a reserved 123-byte
+receipt named `__AN_IPA_SYNTHETIC_DIAGNOSTIC__.ipa` via the service database,
+then runs `scripts/test-preview-workflow.mjs DEPLOYMENT_ID RECEIPT_ID` within
+10 minutes. The server supplies the constant synthetic bytes, verifies replay is
+rejected, runs the scanner, checks fail-closed state, deletes the object through
+cleanup leases, and confirms a subsequent GET is 404. No real IPA is involved.
+A failed synthetic run never counts as verification of real upload or Apple trust.
