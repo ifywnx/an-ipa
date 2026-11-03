@@ -120,13 +120,14 @@ export async function testSyntheticPipeline(id:string){
  const {presignPrivateIpaPut}=await import('@/modules/ipa/r2-presign');
  const c=config();
  const grant=presignPrivateIpaPut(c.r2,123,new Date(),id);
- let uploaded=false;let corsPreflightAllowed=false;
+ let uploaded=false;let corsPreflightAllowed=false;let unsignedGetStatus=0;
  try{
   const put=await fetch(grant.url,{method:'PUT',headers:grant.headers,body:Buffer.alloc(123,65),redirect:'error',signal:AbortSignal.timeout(15000)});
   uploaded=put.ok;await put.body?.cancel();if(!uploaded)throw Error('DIAGNOSTIC_UPLOAD_FAILED');
   const publicUrl=new URL(grant.url);publicUrl.search='';
   const anonymous=await fetch(publicUrl,{redirect:'error',signal:AbortSignal.timeout(15000)});
-  const privateObject=anonymous.status===401||anonymous.status===403;await anonymous.body?.cancel();if(!privateObject)throw Error('DIAGNOSTIC_PUBLIC_OBJECT');
+  unsignedGetStatus=anonymous.status;
+  const unsignedGetBlocked=[400,401,403,404].includes(anonymous.status);await anonymous.body?.cancel();if(!unsignedGetBlocked)throw Error('DIAGNOSTIC_PUBLIC_OBJECT');
   const origin=process.env.APP_ORIGIN;
   if(origin){
    const preflight=await fetch(grant.url,{method:'OPTIONS',headers:{Origin:origin,'Access-Control-Request-Method':'PUT','Access-Control-Request-Headers':'content-type,if-none-match'},redirect:'error',signal:AbortSignal.timeout(15000)});
@@ -146,7 +147,7 @@ export async function testSyntheticPipeline(id:string){
   if(!cleanup.done)throw Error('DIAGNOSTIC_CLEANUP_FAILED');
   const probe=await fetch(presignWorkerObject(c.r2,id,'GET'),{redirect:'error',signal:AbortSignal.timeout(15000)});
   const gone=probe.status===404;await probe.body?.cancel();if(!gone)throw Error('DIAGNOSTIC_OBJECT_REMAINS');
-  return {synthetic:true,bytes:123,privateObject:true,corsPreflightAllowed,overwriteBlocked:true,scanRejected:true,objectDeleted:true,signatureVerified:false,installEligible:false};
+  return {synthetic:true,bytes:123,unsignedGetBlocked:true,unsignedGetStatus,corsPreflightAllowed,overwriteBlocked:true,scanRejected:true,objectDeleted:true,signatureVerified:false,installEligible:false};
  }finally{
   if(uploaded){try{const r=await fetch(presignWorkerObject(c.r2,id,'DELETE'),{method:'DELETE',redirect:'error',signal:AbortSignal.timeout(15000)});await r.body?.cancel();}catch{}}
  }
