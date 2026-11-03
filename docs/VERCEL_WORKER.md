@@ -74,3 +74,8 @@ then runs `scripts/test-preview-workflow.mjs DEPLOYMENT_ID RECEIPT_ID` within
 rejected, runs the scanner, checks fail-closed state, deletes the object through
 cleanup leases, and confirms a subsequent GET is 404. No real IPA is involved.
 A failed synthetic run never counts as verification of real upload or Apple trust.
+
+Applied Supabase history: `20261102235950 vercel_worker_operations`; catalog
+RPC history: `20261103001543 admin_catalog_drafts`. CLI-created local filenames
+differ from server-assigned history versions; do not blindly replay migrations
+against this existing project.
