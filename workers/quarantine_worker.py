@@ -14,6 +14,7 @@ import os
 import re
 import sys
 import tempfile
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -156,6 +157,7 @@ def download_to_quarantine(cfg: dict[str, str], claim: dict, destination: Path) 
     req = urllib.request.Request(url, headers=headers, method="GET")
     digest = hashlib.sha256()
     total = 0
+    deadline = time.monotonic() + 120
     try:
         with secure_opener().open(req, timeout=45) as source:
             advertised = source.headers.get("Content-Length")
@@ -165,6 +167,8 @@ def download_to_quarantine(cfg: dict[str, str], claim: dict, destination: Path) 
             # TemporaryDirectory private path; no archive extraction.
             with destination.open("xb") as output:
                 while True:
+                    if time.monotonic() > deadline:
+                        raise WorkerError("DOWNLOAD_DEADLINE", True)
                     part = source.read(1024 * 1024)
                     if not part:
                         break

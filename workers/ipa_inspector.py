@@ -16,6 +16,7 @@ import stat
 import subprocess
 import sys
 import zipfile
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -44,15 +45,18 @@ def _check_members(archive: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
         parts = name.split("/")
         if (not name or name.startswith("/") or "\\" in name or "\x00" in name
                 or ":" in name or any(p in (".", "..") for p in parts)
+                or any(p == "" for p in parts[:-1])
                 or any(ord(char) < 32 for char in name)
                 or len(name) > 1024):
             raise InspectionError("UNSAFE_ARCHIVE_PATH")
-        canonical = name.rstrip("/").casefold()
+        canonical = unicodedata.normalize("NFC", name.rstrip("/")).casefold()
         if canonical in names:
             raise InspectionError("DUPLICATE_ARCHIVE_PATH")
         mode = stat.S_IFMT(item.external_attr >> 16)
         if mode not in (0, stat.S_IFREG, stat.S_IFDIR):
             raise InspectionError("UNSAFE_ARCHIVE_FILE_TYPE")
+        if item.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+            raise InspectionError("UNSUPPORTED_ZIP_COMPRESSION")
         if item.flag_bits & 1:
             raise InspectionError("ENCRYPTED_ARCHIVE_MEMBER")
         if item.file_size < 0 or item.compress_size < 0:
@@ -65,6 +69,29 @@ def _check_members(archive: zipfile.ZipFile) -> dict[str, zipfile.ZipInfo]:
             raise InspectionError("ZIP_COMPRESSION_RATIO")
         names[canonical] = item
     return names
+
+
+def _verify_archive_streams(archive: zipfile.ZipFile, members: dict) -> None:
+    """Read every member to validate CRC and actual size, without extraction."""
+    total = 0
+    for item in members.values():
+        if item.is_dir():
+            continue
+        actual = 0
+        try:
+            with archive.open(item) as stream:
+                while True:
+                    block = stream.read(65536)
+                    if not block:
+                        break
+                    actual += len(block)
+                    total += len(block)
+                    if actual > item.file_size or total > MAX_TOTAL_UNCOMPRESSED:
+                        raise InspectionError("ZIP_DECOMPRESSION_LIMIT")
+        except (zipfile.BadZipFile, RuntimeError, EOFError, OSError) as exc:
+            raise InspectionError("ARCHIVE_READ_FAILED") from exc
+        if actual != item.file_size:
+            raise InspectionError("ARCHIVE_SIZE_MISMATCH")
 
 
 def _read_limited(archive: zipfile.ZipFile, item: zipfile.ZipInfo, maximum: int) -> bytes:
@@ -155,6 +182,7 @@ def inspect_ipa(filepath: Path) -> dict:
     try:
         with zipfile.ZipFile(filepath, "r", allowZip64=True) as archive:
             members = _check_members(archive)
+            _verify_archive_streams(archive, members)
             apps = {
                 name.split("/")[1] for name in members
                 if re.match(r"^payload/[^/]+\.app/info\.plist$", name)
