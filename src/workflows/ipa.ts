@@ -1,4 +1,5 @@
 import {sleep} from 'workflow';
+import {safeWorkerError} from '@/modules/worker/safe-error';
 // Durable inputs contain only the receipt UUID. Secrets remain in step runtime env.
 export async function processIpaReceipt(id:string){
  'use workflow';
@@ -47,7 +48,7 @@ export async function testQuarantinePipeline(id:string){
 async function testSynthetic(id:string){
  'use step';
  const {testSyntheticPipeline}=await import('@/modules/worker/server');
- try{return await testSyntheticPipeline(id);}catch{throw Error('SYNTHETIC_PIPELINE_FAILED');}
+ try{return await testSyntheticPipeline(id);}catch(error){throw Error(safeWorkerError(error,'SYNTHETIC_PIPELINE_FAILED'));}
 }
 // Synthetic diagnostic side effects are not automatically retried. Create a new
 // marked receipt for a new diagnostic; normal scans retain their leased retries.
