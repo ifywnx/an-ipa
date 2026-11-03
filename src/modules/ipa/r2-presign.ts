@@ -16,7 +16,7 @@ export function validateR2(config:PrivateR2):boolean{
   !!config.secretAccessKey&&config.secretAccessKey.length<=256;
 }
 export interface R2UploadGrant {
- url:string;headers:{"Content-Type":"application/octet-stream"};objectKey:string;expiresIn:number;
+ url:string;headers:{"Content-Type":"application/octet-stream";"If-None-Match":"*"};objectKey:string;expiresIn:number;
 }
 /**
  * Content-Length is included in SignedHeaders. The browser sends Content-Length
@@ -36,7 +36,7 @@ export function presignPrivateIpaPut(
  const date=now.toISOString().replace(/[:-]|\.\d{3}/g,"");
  const day=date.slice(0,8);
  const scope=day+"/auto/s3/aws4_request";
- const signedHeaders="content-length;content-type;host";
+ const signedHeaders="content-length;content-type;host;if-none-match";
  const params:Record<string,string>={
   "X-Amz-Algorithm":"AWS4-HMAC-SHA256",
   "X-Amz-Content-Sha256":"UNSIGNED-PAYLOAD",
@@ -49,14 +49,15 @@ export function presignPrivateIpaPut(
  const request="PUT\n"+path+"\n"+query+"\n"+
   "content-length:"+String(size)+"\n"+
   "content-type:application/octet-stream\n"+
-  "host:"+host+"\n\n"+signedHeaders+"\nUNSIGNED-PAYLOAD";
+  "host:"+host+"\n"+
+  "if-none-match:*\n\n"+signedHeaders+"\nUNSIGNED-PAYLOAD";
  const stringToSign="AWS4-HMAC-SHA256\n"+date+"\n"+scope+"\n"+sha256(request);
  const kDate=hmac("AWS4"+config.secretAccessKey,day);
  const kRegion=hmac(kDate,"auto"),kService=hmac(kRegion,"s3");
  const signingKey=hmac(kService,"aws4_request");
  const signature=createHmac("sha256",signingKey).update(stringToSign).digest("hex");
  return {url:"https://"+host+path+"?"+query+"&X-Amz-Signature="+signature,
-  headers:{"Content-Type":"application/octet-stream"},objectKey,expiresIn:300};
+  headers:{"Content-Type":"application/octet-stream","If-None-Match":"*"},objectKey,expiresIn:300};
 }
 
 

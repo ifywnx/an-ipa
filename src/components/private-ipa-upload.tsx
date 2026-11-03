@@ -30,6 +30,7 @@ export function PrivateIpaUpload({file}:{file:File|null}){
     xhr.open("PUT",grant.uploadUrl as string,true);
     xhr.timeout=10*60*1000;
     xhr.setRequestHeader("Content-Type","application/octet-stream");
+    xhr.setRequestHeader("If-None-Match","*");
     xhr.upload.onprogress=e=>{if(e.lengthComputable)setProgress(Math.floor(e.loaded/e.total*100));};
     xhr.onerror=()=>reject(new Error("network"));
     xhr.ontimeout=()=>reject(new Error("timeout"));

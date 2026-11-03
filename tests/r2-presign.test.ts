@@ -14,10 +14,10 @@ test("presigned URL is short-lived, scoped to unique object and bounded to exact
  assert.equal(url.host,cfg.accountId+".r2.cloudflarestorage.com");
  assert.equal(url.pathname,"/"+cfg.bucket+"/quarantine/"+id+".ipa");
  assert.equal(url.searchParams.get("X-Amz-Expires"),"300");
- assert.equal(url.searchParams.get("X-Amz-SignedHeaders"),"content-length;content-type;host");
+ assert.equal(url.searchParams.get("X-Amz-SignedHeaders"),"content-length;content-type;host;if-none-match");
  assert.match(url.searchParams.get("X-Amz-Signature")||"",/^[0-9a-f]{64}$/);
  assert.ok(!grant.url.includes(cfg.secretAccessKey));
- assert.deepEqual(grant.headers,{"Content-Type":"application/octet-stream"});
+ assert.deepEqual(grant.headers,{"Content-Type":"application/octet-stream","If-None-Match":"*"});
  assert.equal(grant.url,presignPrivateIpaPut(cfg,5*1024*1024,now,id).url);
  assert.notEqual(grant.url,presignPrivateIpaPut(cfg,5*1024*1024+1,now,id).url);
 });
