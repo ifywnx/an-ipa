@@ -17,3 +17,16 @@ export function presignWorkerObject(config:PrivateR2,id:string,method:'GET'|'DEL
  const sig=createHmac('sha256',key).update(['AWS4-HMAC-SHA256',stamp,scope,hash(canonical)].join('\n')).digest('hex');
  return 'https://'+host+path+'?'+query+'&X-Amz-Signature='+sig;
 }
+
+/** Read-only bucket lifecycle inspection. URL stays in server runtime. */
+export function presignLifecycleRead(config:PrivateR2,now=new Date()){
+ if(!validateR2(config)||!Number.isFinite(now.getTime()))throw Error('INVALID_WORKER_GRANT');
+ const host=config.accountId.toLowerCase()+'.r2.cloudflarestorage.com';
+ const path='/'+enc(config.bucket),stamp=now.toISOString().replace(/[:-]|\.\d{3}/g,''),day=stamp.slice(0,8),scope=day+'/auto/s3/aws4_request';
+ const fields={'lifecycle':'','X-Amz-Algorithm':'AWS4-HMAC-SHA256','X-Amz-Content-Sha256':'UNSIGNED-PAYLOAD','X-Amz-Credential':config.accessKeyId+'/'+scope,'X-Amz-Date':stamp,'X-Amz-Expires':'60','X-Amz-SignedHeaders':'host'};
+ const query=Object.entries(fields).map(([k,v])=>enc(k)+'='+enc(v)).sort().join('&');
+ const canonical=['GET',path,query,'host:'+host+'\n','host','UNSIGNED-PAYLOAD'].join('\n');
+ const key=hmac(hmac(hmac(hmac('AWS4'+config.secretAccessKey,day),'auto'),'s3'),'aws4_request');
+ const sig=createHmac('sha256',key).update(['AWS4-HMAC-SHA256',stamp,scope,hash(canonical)].join('\n')).digest('hex');
+ return 'https://'+host+path+'?'+query+'&X-Amz-Signature='+sig;
+}

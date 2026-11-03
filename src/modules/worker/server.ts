@@ -34,13 +34,18 @@ async function loadSources(tests=false){
  return Promise.all(names.map(async name=>({path:'/vercel/sandbox/'+name,content:await readFile(process.cwd()+'/workers/'+name)})));
 }
 export async function sandboxSelfTest(){
- const box=await Sandbox.create({persistent:false,resources:{vcpus:1},timeout:180000,ports:[],networkPolicy:'deny-all',tags:{purpose:'ipa-self-test'}});
+ const runId=await recordRun(null,'self_test');
+ let box:Sandbox|undefined;
  try{
+  const lifecycle=await lifecycleDiagnostic();
+  box=await Sandbox.create({persistent:false,resources:{vcpus:1},timeout:180000,ports:[],networkPolicy:'deny-all',tags:{purpose:'ipa-self-test'}});
   await box.writeFiles(await loadSources(true));
   const result=await box.runCommand({cmd:'python3',args:['-I','-m','unittest','discover','-s','/vercel/sandbox/tests','-v'],cwd:'/vercel/sandbox'});
   if(result.exitCode!==0)throw Error('SANDBOX_SELF_TEST_FAILED');
-  return {ok:true,environment:'vercel-sandbox',network:'deny-all',signatureVerified:false,installEligible:false};
- }finally{await box.stop();await box.delete();}
+  await finishRun(runId,'succeeded');
+  return {ok:true,environment:'vercel-sandbox',network:'deny-all',...lifecycle,signatureVerified:false,installEligible:false};
+ }catch{await finishRun(runId,'failed','SELF_TEST_FAILED');throw Error('SANDBOX_SELF_TEST_FAILED');}
+ finally{if(box){try{await box.stop();await box.delete();}catch{}}}
 }
 function validateResult(raw:string){
  if(raw.length>8192)throw Error('WORKER_REPORT_INVALID');
@@ -132,4 +137,12 @@ export async function testSyntheticPipeline(id:string){
  }finally{
   if(uploaded){try{const r=await fetch(presignWorkerObject(c.r2,id,'DELETE'),{method:'DELETE',redirect:'error',signal:AbortSignal.timeout(15000)});await r.body?.cancel();}catch{}}
  }
+}
+
+export async function lifecycleDiagnostic(){
+ const {presignLifecycleRead}=await import('./r2-objects');
+ const response=await fetch(presignLifecycleRead(config().r2),{redirect:'error',cache:'no-store',signal:AbortSignal.timeout(10000)});
+ // Return only availability, not bucket configuration, credentials or signed URL.
+ await response.body?.cancel();
+ return {lifecycleReadable:response.ok,lifecycleStatus:response.status,lifecyclePolicyVerified:false};
 }
