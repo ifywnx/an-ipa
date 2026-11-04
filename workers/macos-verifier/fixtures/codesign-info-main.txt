@@ -1,0 +1,12 @@
+Executable=/private/tmp/Synthetic.app/Synthetic
+Identifier=com.example.synthetic
+Format=app bundle with Mach-O thin (arm64)
+CodeDirectory v=20500 size=12345 flags=0x0(none) hashes=100+7 location=embedded
+Signature size=4713
+Authority=iPhone Developer: SYNTHETIC (ABCDE12345)
+Authority=Apple Worldwide Developer Relations Certification Authority
+Authority=Apple Root CA
+Info.plist entries=42
+TeamIdentifier=TEAM123456
+Sealed Resources version=2 rules=10 files=55
+Internal requirements count=1 size=220

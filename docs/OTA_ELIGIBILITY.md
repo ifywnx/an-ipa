@@ -140,3 +140,21 @@ never supply evidence fields such as `signatureVerified`, `profileUdids`,
 Until those gates pass, both OTA flags stay `false`, the app detail page
 continues to show that website installation is unavailable, and no install
 link is rendered.
+
+## Addendum — code-complete state, 2026-11-05
+
+The blockers listed above are narrowed, not removed. Now implemented in
+code (branch `codex/ota-eligibility`, unpushed): the persistent grant
+model + issuer and the evidence-reloading manifest/download routes
+(former blocker 2), the server-only Supabase evidence adapter anticipated
+by the data-model decision, the provisioning-profile intake worker that
+supplies `provisioning_profiles` evidence, and the macOS verifier package
+that is the intended source for former blocker 1's trusted evidence.
+Former blockers 3–6 are unchanged: R2 lifecycle/CORS on the real bucket, a
+real owner-signed IPA upload, legitimate Apple device registration +
+profile regeneration + LCSign re-signing, and physical iPhone OTA tests
+(ineligible device, expired/revoked profile, mid-window revocation) still
+require the owner and real hardware. The verifier package is
+fixture-tested only; it has never run on a Mac, so no signature evidence
+is trusted yet. Both OTA flags remain `false`, and nothing in this
+addendum authorizes enabling them.

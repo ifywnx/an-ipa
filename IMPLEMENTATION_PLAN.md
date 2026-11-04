@@ -99,3 +99,64 @@ persistent grant issuer, upload/publish/OTA enablement, merge or production
 deployment was created. Trusted Apple verification, verified R2
 lifecycle/CORS, real IPA upload, supported device enrollment and physical
 iPhone OTA tests remain blockers.
+
+## Code-complete continuation — 2026-11-05
+
+Local branch `codex/ota-eligibility` (still NOT pushed, NOT merged; both OTA
+flags still default `false`). The store is now code-complete: everything
+that can be built and verified without real Apple assets, a real Mac, a
+real iPhone or the live Supabase project exists and is tested
+(TypeScript 128/128, Python 37/37, typecheck, production build and
+security:check all green at the time of writing).
+
+Implemented in this continuation:
+
+- **Install grants + public OTA endpoints (A):** `install_grants` domain
+  model (`src/modules/ota/grants.ts`) — hash-only bearer tokens, 10-minute
+  reusable window (iOS fetches manifest and IPA separately; revocation is
+  the kill switch), Admin-only issuance (`POST /api/ota/grants`), public
+  `GET /api/ota/manifest/<token>` and `GET /api/ota/download/<token>`
+  (302 to a presigned private-R2 GET, TTL ≤ 300s and ≤ grant remainder).
+  Every fetch reloads the grant AND fresh evidence and re-runs
+  `denyOtaGrant`; clients can never supply evidence. Closed flags deny at
+  issuance and at fetch time with `OTA_INSTALL_DISABLED` /
+  `OTA_INSTALL_PIPELINE_NOT_READY` and persist nothing.
+- **Supabase evidence adapter (B):** `src/modules/ota/evidence-map.ts`
+  (pure, fake-client tested) behind the server-only `evidence.ts`. Maps
+  devices / versions / apps / assets / channels / provisioning_profiles /
+  verifier_attestations into `OtaEvidence`, fail-closed on any missing or
+  mismatched record (an attestation counts only when its SHA-256 equals
+  the asset's). Schema assumptions and the reconciliation checklist are in
+  the `evidence.ts` header. Migration
+  `20261105090000_install_grants_and_verifier_attestations.sql` adds ONLY
+  the two new tables, repo-convention style, and is **not applied**.
+- **Profile intake (C):** `workers/profile_intake.py` verifies CMS content
+  integrity and extracts Team ID, App ID/bundle (incl. wildcard), the full
+  provisioned-UDID list, expiry and profile type as evidence (expired
+  profiles are recorded, not hidden). `POST /api/admin/profiles/intake`
+  stores the strictly validated report; the report can never claim Apple
+  chain trust.
+- **macOS verifier (D):** `workers/macos-verifier/` — ready to run on a
+  Mac (`codesign --verify --deep --strict`, per-component Team checks,
+  entitlements subset check, `security cms -D`, `security verify-cert`
+  with OCSP attempt). Output parsers are fixture-tested on Linux; the
+  package **has never run on a real Mac** and its evidence is not trusted
+  until it does and an iPhone install confirms it. Attestations enter only
+  via `POST /api/admin/verifier/attestations`.
+- **Storefront (E):** `/devices` (browser-bound saved device + status,
+  honest about there being no customer accounts yet), Apple quota panel on
+  `/admin/udids` (recorded data only; explicit "chưa nối dữ liệu Apple"
+  state instead of invented numbers), install checklist + FAQ on app
+  detail pages, and three real policy pages marked as drafts pending the
+  owner's legal review.
+
+**Only human/real-environment steps remain** (none can be replaced by
+code): (1) upload a real LCSign-signed IPA through the private intake;
+(2) register a real device with Apple, regenerate the profile, re-sign in
+LCSign; (3) run the macOS verifier on a real Mac and store its first real
+attestation; (4) reconcile the adapter's schema assumptions against the
+canonical Supabase project and apply the new migration; (5) verify R2
+lifecycle/CORS on the real bucket; (6) physical iPhone OTA tests incl.
+ineligible device, expired/revoked profile, revocation mid-window;
+(7) owner approval of the draft policies, production domain, and only
+then flipping the two OTA flags.

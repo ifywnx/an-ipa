@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { findPublicApp, validSlug } from "@/modules/catalog/service";
+import { InstallChecklist, InstallFaq } from "@/components/install-guide";
 
 export default async function AppDetails({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -24,5 +25,7 @@ export default async function AppDetails({ params }: { params: Promise<{ slug: s
       <p>Thông tin xuất bản ứng dụng không đồng nghĩa thiết bị đủ điều kiện cài IPA. IPA được chủ cửa hàng ký bằng LCSign trên iPhone. Chỉ mở liên kết cài đặt sau khi server xác minh chữ ký, provisioning profile, quyền phân phối và điều kiện thiết bị.</p>
       <Link href="/devices/register">Tìm hiểu điều kiện thiết bị</Link>
     </div>
+    <InstallChecklist />
+    <InstallFaq />
   </section>;
 }
