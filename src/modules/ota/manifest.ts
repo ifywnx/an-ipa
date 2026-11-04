@@ -33,6 +33,7 @@ export function denyOtaGrant(g:VerifiedOtaGrant,hosts:readonly string[],now=new 
   if(!g.artifactVerified) problems.push("CRYPTO_VERIFICATION_REQUIRED");
   if(!g.distributionRightsReviewed) problems.push("DISTRIBUTION_RIGHTS_REQUIRED");
   if(!/^[a-f0-9]{64}$/.test(g.artifactSha256)) problems.push("UNTRUSTED_IPA_HASH");
+  else if(g.artifactSha256!==g.evidence.verifiedArtifactSha256) problems.push("ARTIFACT_HASH_MISMATCH");
   if(!/^[A-Za-z][A-Za-z0-9-]*(?:\.[A-Za-z0-9-]+)+$/.test(g.bundleIdentifier) ||
     g.bundleIdentifier!==g.evidence.bundleId) problems.push("BUNDLE_ID_MISMATCH");
   if(!/^[0-9]+(?:\.[0-9]+){0,3}$/.test(g.version) || g.version.length>40) problems.push("INVALID_VERSION");

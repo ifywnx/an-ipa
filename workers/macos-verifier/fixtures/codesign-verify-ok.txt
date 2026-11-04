@@ -1,0 +1,2 @@
+/private/tmp/Synthetic.app: valid on disk
+/private/tmp/Synthetic.app: satisfies its Designated Requirement

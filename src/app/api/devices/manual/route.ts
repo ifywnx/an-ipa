@@ -1,5 +1,8 @@
 import {NextRequest,NextResponse} from "next/server";
 import {getManualConfig} from "@/modules/enrollment/manual";
+import {customerConfig, customerFromRequest} from "@/modules/auth/customer-server";
+import {createAccountDbClient} from "@/modules/accounts/server";
+import {attachManualRequest} from "@/modules/accounts/ownership";
 import {enrollmentDb,enrollmentHeaders,tokenHash} from "@/modules/enrollment/server";
 import {encryptUdid,keyedHash,randomToken} from "@/modules/enrollment/secure";
 import {normalizeUdid} from "@/modules/devices/policy";
@@ -41,6 +44,16 @@ export async function POST(r:NextRequest) {
     })
    });
    if(typeof id!=="string")return fail("UNAVAILABLE",503);
+   // Signed-in submitters get the request linked to their account. Best
+   // effort only: ownership bookkeeping must never fail an intake, and a
+   // guest submit simply stays unowned (claimable later from this browser).
+   const accountCfg=customerConfig();
+   if(accountCfg){
+     try{
+       const account=await customerFromRequest(r);
+       if(account)await attachManualRequest(createAccountDbClient(accountCfg),id,account.user.id);
+     }catch{/* intake already stored */}
+   }
    const response=NextResponse.json({requestId:id,status:"pending_unverified",
      message:"Chờ xác minh, không có quyền OTA."},{status:201,headers:enrollmentHeaders});
    response.cookies.set(cookie,token,{httpOnly:true,secure:true,sameSite:"lax",

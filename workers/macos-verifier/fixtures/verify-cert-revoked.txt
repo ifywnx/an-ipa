@@ -1,0 +1,2 @@
+security: SecPolicyCreateRevocation: certificate has been revoked
+verify-cert: CSSMERR_TP_CERT_REVOKED

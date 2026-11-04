@@ -1,6 +1,6 @@
 "use client";
 import {useCallback,useEffect,useState} from "react";
-type ScanSummary={bundle_id?:string;version?:string;build?:string;profile_type?:string;ad_hoc_device_count?:number};
+type ScanSummary={bundle_id?:string;version?:string;build?:string;profile_type?:string;ad_hoc_device_count?:number; nested_components?:{p:string;k:string;s:boolean;t?:string|null}[];nested_component_count?:number; nested_components_truncated?:boolean; nested_issues?:string[]; unresolved_dylib_dependencies?:{f:string;n:string}[]; nested_signature_consistent?:boolean; dylib_dependencies_resolved?:boolean};
 type Intake={id:string;filename:string;expected_bytes:number;state:string;created_at:string;expires_at:string;scan_finished_at?:string|null;scan_error?:string|null;scan_report?:ScanSummary|null;scan_attempts?:number;delete_after?:string;object_deleted_at?:string|null;cleanup_error?:string|null;sha256_verified?:string|null};
 const names:Record<string,string>={
  reserved:"Đã cấp lượt tải — chưa có xác nhận file",
@@ -44,6 +44,12 @@ export function AdminIntakeList(){
     <strong>{item.filename}</strong>
     <p>{(item.expected_bytes/1048576).toFixed(1)} MiB · {names[item.state]||"Trạng thái đang kiểm tra"}</p>
     {item.scan_report?.bundle_id&&<p className="small-muted">Bundle: {item.scan_report.bundle_id} · v{item.scan_report.version||"?"} ({item.scan_report.build||"?"}) · Profile: {item.scan_report.profile_type||"chưa rõ"}</p>}
+    {item.scan_report?.nested_components&&item.scan_report.nested_components.length>0&&<div className="small-muted">Code lồng (mọi IPA đều chèn dylib — metadata nhúng, chưa xác thực Apple):
+      <ul>{item.scan_report.nested_components.map(c=><li key={c.p}>{c.p} · {c.k} · {c.s?"có chữ ký nhúng":"THIẾU chữ ký nhúng"} · Team: {c.t||"không đọc được"}</li>)}</ul>
+      {item.scan_report.nested_components_truncated&&<p>Danh sách đã rút gọn khi lưu (tổng {item.scan_report.nested_component_count||"?"} thành phần).</p>}
+    </div>}
+    {item.scan_report?.nested_issues&&item.scan_report.nested_issues.length>0&&<p className="small-muted">Vấn đề code lồng: {item.scan_report.nested_issues.join(", ")}</p>}
+    {item.scan_report?.unresolved_dylib_dependencies?.map(u=><p className="small-muted" key={u.f+u.n}>Phụ thuộc dylib không giải quyết được: {u.n} (nạp từ {u.f}) — app có thể văng trên máy không jailbreak.</p>)}
     {item.scan_error&&<p className="small-muted">Mã kiểm tra: {item.scan_error}</p>}
     {item.sha256_verified&&<p className="small-muted">SHA-256: {item.sha256_verified.slice(0,16)}… · Chỉ kiểm tra dữ liệu, không xác thực Apple</p>}
     <p className="small-muted">Lượt quét: {item.scan_attempts||0}/3 · Chữ ký Apple: chưa xác minh · OTA: chưa cấp phép</p>

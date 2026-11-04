@@ -1,0 +1,8 @@
+Executable=/private/tmp/Synthetic.app/Frameworks/Tweak.dylib
+Identifier=Tweak
+Format=Mach-O thin (arm64)
+CodeDirectory v=20400 size=900 flags=0x20002(adhoc,linker-signed) hashes=20+0 location=embedded
+Info.plist=not bound
+TeamIdentifier=not set
+Sealed Resources=none
+Internal requirements count=0 size=12

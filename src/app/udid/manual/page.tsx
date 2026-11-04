@@ -1,6 +1,7 @@
 "use client";
 import {useEffect,useState,type FormEvent} from "react";
 import Link from "next/link";
+import {validateUdid} from "@/modules/devices/policy";
 type State={requestId?:string;status?:string;udidSuffix?:string;message?:string;error?:string};
 export default function ManualUdid(){
  const [udid,setUdid]=useState("");const [label,setLabel]=useState("");
@@ -13,11 +14,16 @@ export default function ManualUdid(){
  },[]);
  async function submit(e:FormEvent<HTMLFormElement>){
    e.preventDefault();if(!consent||busy)return;
+   const validation=validateUdid(udid);
+   if(!validation.valid||!validation.normalized){
+     setNotice("UDID chưa đúng định dạng. Dùng 40 ký tự hex hoặc dạng 8 ký tự hex, dấu gạch ngang, rồi 16 ký tự hex.");
+     return;
+   }
    setBusy(true);setNotice("");
    try{
      const r=await fetch("/api/devices/manual",{
        method:"POST",headers:{"Content-Type":"application/json"},credentials:"same-origin",
-       body:JSON.stringify({consent,udid,deviceLabel:label})
+       body:JSON.stringify({consent,udid:validation.normalized,deviceLabel:label})
      });
      const result=await r.json() as State;
      if(!r.ok){

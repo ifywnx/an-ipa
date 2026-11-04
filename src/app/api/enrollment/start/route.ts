@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnrollmentConfig, enrollmentDb, enrollmentHeaders, unavailable, tokenHash } from "@/modules/enrollment/server";
+import { getSelfProfileConfig } from "@/modules/enrollment/self-profile";
+import { customerConfig, customerFromRequest } from "@/modules/auth/customer-server";
+import { createAccountDbClient } from "@/modules/accounts/server";
+import { attachGuestEnrollment } from "@/modules/accounts/ownership";
 import { randomToken, keyedHash } from "@/modules/enrollment/secure";
 export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
-  const config = getEnrollmentConfig();
+  // Provider mode (external verified Profile Service) always wins when it is
+  // configured: it is the only path whose completion can mark a session
+  // 'verified'. Self-profile mode is the pragmatic fallback — its sessions
+  // can only ever complete as device-reported. Session creation, the
+  // one-time challenge, cookie and SQL rate limit are identical either way.
+  const provider = getEnrollmentConfig();
+  const self = provider ? null : getSelfProfileConfig();
+  const config = provider ?? self;
   if (!config) return unavailable();
   if (request.headers.get("origin") !== config.appOrigin ||
     !request.headers.get("content-type")?.startsWith("application/json"))
@@ -30,12 +41,35 @@ export async function POST(request: NextRequest) {
   } catch {
     return Response.json({error:"ENROLLMENT_UNAVAILABLE_OR_RATE_LIMITED"}, {status:429, headers:enrollmentHeaders});
   }
-  // Only a separately trusted Profile Service provider may serve a real .mobileconfig,
-  // validate the Apple CMS chain and sign a verification assertion. Never construct a fake profile.
-  const enrollUrl = new URL(config.providerStartUrl);
-  enrollUrl.searchParams.set("challenge", challenge);
-  enrollUrl.searchParams.set("return_to", config.appOrigin+"/udid");
-  const response = NextResponse.json({ status:"pending", profileUrl:enrollUrl.toString(), expiresAt:expiry.toISOString() },
+  // Signed-in starters get the session linked to their account so the
+  // device callback can pass ownership to the pending UDID request.
+  // Best effort: bookkeeping must never break enrollment.
+  const accountCfg = customerConfig();
+  if (accountCfg) {
+    try {
+      const account = await customerFromRequest(request);
+      if (account) await attachGuestEnrollment(
+        createAccountDbClient(accountCfg), tokenHash(browser), account.user.id);
+    } catch { /* enrollment already created */ }
+  }
+  let profileUrl: string;
+  let mode: "provider" | "self_profile";
+  if (provider) {
+    // Only a separately trusted Profile Service provider may serve a real
+    // .mobileconfig, validate the Apple CMS chain and sign a verification
+    // assertion in this mode.
+    const enrollUrl = new URL(provider.providerStartUrl);
+    enrollUrl.searchParams.set("challenge", challenge);
+    enrollUrl.searchParams.set("return_to", config.appOrigin+"/udid");
+    profileUrl = enrollUrl.toString();
+    mode = "provider";
+  } else {
+    // Self-profile mode: our own endpoint serves the .mobileconfig for this
+    // exact challenge; the device reports back to our own callback.
+    profileUrl = config.appOrigin + "/api/enrollment/profile?challenge=" + encodeURIComponent(challenge);
+    mode = "self_profile";
+  }
+  const response = NextResponse.json({ status:"pending", mode, profileUrl, expiresAt:expiry.toISOString() },
     { headers:enrollmentHeaders });
   response.cookies.set("an_enrollment", browser,
     {httpOnly:true,secure:true,sameSite:"lax",path:"/api/enrollment",expires:expiry});
