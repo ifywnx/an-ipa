@@ -160,3 +160,48 @@ lifecycle/CORS on the real bucket; (6) physical iPhone OTA tests incl.
 ineligible device, expired/revoked profile, revocation mid-window;
 (7) owner approval of the draft policies, production domain, and only
 then flipping the two OTA flags.
+
+## Customer accounts continuation — 2026-11-05
+
+Local branch `codex/ota-eligibility` (still NOT pushed, NOT merged;
+`CUSTOMER_ACCOUNTS_ENABLED` defaults to `false`). The gap noted in the
+storefront item above — "no customer accounts yet, devices are
+browser-bound" — is now closed in code:
+
+- **Accounts on Supabase Auth** (`src/modules/auth/customer.ts`,
+  `customer-server.ts`): registration, password login, magic link and a
+  Google authorize entry point, all behind the new flag + WAF gate. The
+  customer session is a separate sealed cookie (`__Host-an-customer`,
+  own `CUSTOMER_SESSION_KEY_B64`) and the module performs **no roles
+  lookup** — confirmed, unbanned accounts are customers; Admin still
+  requires its own cookie, key and roles check, so a customer session
+  can never open Admin (source- and unit-tested). Identity is
+  revalidated against `/auth/v1/user` per read; route handlers rotate
+  expired access tokens via the sealed refresh token (30-day absolute
+  cap). `/auth/callback` establishes sessions from fragment token pairs.
+- **Ownership** (migration `20261105140000_customer_accounts.sql`,
+  **not applied**): `user_id` on `manual_udid_requests` (both intake
+  sources) and on `guest_enrollments` (the profile callback inherits the
+  owner from the session row inside SQL). Signed-in submissions attach
+  automatically; guest submissions are claimable later **only** from the
+  same browser holding the intake cookie — claim RPCs match credential
+  hashes on unowned rows, and no claim-by-UDID path exists. Access stays
+  server-route + service-role scoped by the verified user id, plus a
+  column-limited read-own RLS policy as defence in depth.
+- **Surfaces:** `/login`, `/register`, `/account` (email, logout, claim,
+  UDID-data deletion request), `/devices` account section, nav entry
+  (hidden while the flag is off), Admin UDID queue with owner email or
+  "Khách vãng lai", and pending deletion requests on `/admin/udids`.
+  Deletion requests land in the new `customer_deletion_requests` table
+  (the canonical `privacy_requests` schema is not recorded in this repo,
+  so it is deliberately not written blind); processing is a documented
+  manual operator flow in `docs/CUSTOMER_ACCOUNTS.md`.
+- An account is bookkeeping only: it never changes a request's status,
+  never verifies a device and never feeds OTA eligibility.
+
+**Owner-only activation steps** (real project/dashboard): apply the
+migration after canonical-history reconciliation; configure Supabase
+Auth (email confirmation ON, redirect URL `<APP_ORIGIN>/auth/callback`,
+rate limits, optional Google provider + OAuth credentials); set the new
+env flags/key; run the real-device sign-up/sign-in/claim test pass
+listed in `docs/CUSTOMER_ACCOUNTS.md`.

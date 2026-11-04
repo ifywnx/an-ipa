@@ -21,13 +21,18 @@ test("app detail pages carry the pre-install checklist and FAQ", () => {
   assert.match(detail, /InstallFaq/);
 });
 
-test("customer devices page is honest about browser-bound storage and reuses the manual API", () => {
+test("customer devices page is honest about both storage scopes and reuses the intake APIs", () => {
   const page = read("src/app/devices/page.tsx");
   assert.match(page, /\/api\/devices\/manual/);
+  assert.match(page, /\/api\/account\/devices/);
   assert.match(page, /trình duyệt này/);
   assert.match(page, /pending_unverified/);
-  assert.match(page, /chưa có tài khoản khách hàng/);
-  assert.doesNotMatch(page, /tài khoản của bạn đã/);
+  // Guests are told plainly that storage is browser-bound, with the account
+  // option offered instead of the old (now false) "no customer accounts".
+  assert.match(page, /Đăng ký tài khoản để không mất dấu thiết bị/);
+  assert.doesNotMatch(page, /chưa có tài khoản khách hàng/);
+  // An account must never be presented as device verification.
+  assert.match(page, /tài khoản không tự làm thiết bị đủ điều kiện cài IPA/);
 });
 
 test("admin quota panel shows real-data wiring and an explicit unconnected state", () => {

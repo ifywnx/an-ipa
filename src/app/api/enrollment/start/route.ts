@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getEnrollmentConfig, enrollmentDb, enrollmentHeaders, unavailable, tokenHash } from "@/modules/enrollment/server";
 import { getSelfProfileConfig } from "@/modules/enrollment/self-profile";
+import { customerConfig, customerFromRequest } from "@/modules/auth/customer-server";
+import { createAccountDbClient } from "@/modules/accounts/server";
+import { attachGuestEnrollment } from "@/modules/accounts/ownership";
 import { randomToken, keyedHash } from "@/modules/enrollment/secure";
 export const runtime = "nodejs";
 export async function POST(request: NextRequest) {
@@ -37,6 +40,17 @@ export async function POST(request: NextRequest) {
     });
   } catch {
     return Response.json({error:"ENROLLMENT_UNAVAILABLE_OR_RATE_LIMITED"}, {status:429, headers:enrollmentHeaders});
+  }
+  // Signed-in starters get the session linked to their account so the
+  // device callback can pass ownership to the pending UDID request.
+  // Best effort: bookkeeping must never break enrollment.
+  const accountCfg = customerConfig();
+  if (accountCfg) {
+    try {
+      const account = await customerFromRequest(request);
+      if (account) await attachGuestEnrollment(
+        createAccountDbClient(accountCfg), tokenHash(browser), account.user.id);
+    } catch { /* enrollment already created */ }
   }
   let profileUrl: string;
   let mode: "provider" | "self_profile";

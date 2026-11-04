@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { enrollmentDb, enrollmentHeaders, tokenHash, unavailable } from "@/modules/enrollment/server";
 import { extractDeviceReportedAttributes, getSelfProfileConfig, MAX_DEVICE_RESPONSE_BYTES } from "@/modules/enrollment/self-profile";
+import { customerConfig } from "@/modules/auth/customer-server";
+import { linkSelfProfileRequest, type AccountDbClient } from "@/modules/accounts/ownership";
 import { encryptUdid, keyedHash, randomToken } from "@/modules/enrollment/secure";
 export const runtime = "nodejs";
 
@@ -63,6 +65,21 @@ export async function POST(request: NextRequest) {
         })
       });
     } catch { /* already pending or rate limited; nothing sensitive to log */ }
+    // If the enrollment session was started by a signed-in customer, pass
+    // its ownership to the pending request (the SQL reads the owner from
+    // the session row; nothing here supplies a user id). Best effort and
+    // only when customer accounts are configured at all.
+    if (customerConfig()) {
+      try {
+        const accountDb: AccountDbClient = {
+          select: async () => [],
+          rpc: (name, body) => enrollmentDb(config, "rpc/" + name, {
+            method: "POST", body: JSON.stringify(body)
+          }),
+        };
+        await linkSelfProfileRequest(accountDb, tokenHash(reported.challenge));
+      } catch { /* ownership link is bookkeeping, never a flow failure */ }
+    }
   }
   // Send the device back to the store's own /udid page so the person sees
   // their UDID. Same-origin by construction: the target is built from the
