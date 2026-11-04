@@ -190,6 +190,66 @@ def download_to_quarantine(cfg: dict[str, str], claim: dict, destination: Path) 
     return digest.hexdigest()
 
 
+_NESTED_ISSUE_CODES = {
+    "NESTED_SIGNATURE_MISSING", "NESTED_SIGNATURE_UNREADABLE",
+    "NESTED_TEAM_MISMATCH", "NESTED_CODE_UNREADABLE",
+    "DYLIB_UNRESOLVED_DEPENDENCY",
+}
+_NESTED_KINDS = {"executable", "dylib", "framework", "appex", "app"}
+
+
+def _nested_summary(inspected: dict) -> dict:
+    """Compact whitelist of the inspector's nested Mach-O inventory.
+
+    Every store IPA is dylib-injected, so Admin review needs the injected
+    component list. Only path/kind/signed/team claims are kept, bounded so
+    the stored report still fits the 4096-byte scan_report column limit.
+    These are embedded-metadata claims, never Apple-trusted verification.
+    """
+    nested = inspected.get("nested_code")
+    if not isinstance(nested, dict):
+        nested = {}
+    components = []
+    raw_components = nested.get("components")
+    if isinstance(raw_components, list):
+        for entry in raw_components[:24]:
+            if not isinstance(entry, dict):
+                continue
+            path, kind, team = entry.get("path"), entry.get("kind"), entry.get("team_id")
+            if not isinstance(path, str) or not path or kind not in _NESTED_KINDS:
+                continue
+            components.append({
+                "p": path[:96],
+                "k": kind,
+                "s": entry.get("signed") is True,
+                "t": team[:32] if isinstance(team, str) and team else None,
+            })
+    count = nested.get("component_count")
+    if type(count) is not int or not 0 <= count <= 100000:
+        count = len(components)
+    issues = nested.get("issues")
+    issues = ([code for code in issues if code in _NESTED_ISSUE_CODES]
+              if isinstance(issues, list) else [])
+    unresolved = []
+    raw_unresolved = nested.get("unresolved_dependencies")
+    if isinstance(raw_unresolved, list):
+        for entry in raw_unresolved[:8]:
+            if not isinstance(entry, dict):
+                continue
+            comp, ref = entry.get("component"), entry.get("reference")
+            if isinstance(comp, str) and comp and isinstance(ref, str) and ref:
+                unresolved.append({"f": comp[:96], "n": ref[:128]})
+    return {
+        "nested_components": components,
+        "nested_component_count": count,
+        "nested_components_truncated": nested.get("truncated") is True,
+        "nested_issues": issues,
+        "unresolved_dylib_dependencies": unresolved,
+        "nested_signature_consistent": nested.get("signature_metadata_consistent") is True,
+        "dylib_dependencies_resolved": nested.get("dependencies_resolved") is True,
+    }
+
+
 def sanitized_report(inspected: dict) -> dict:
     """Whitelist tiny, non-sensitive metadata; never store UDID, CMS or certs."""
     p = inspected.get("profile", {})
@@ -206,6 +266,7 @@ def sanitized_report(inspected: dict) -> dict:
         "code_signature_verified": False,
         "install_eligible": False,
     }
+    result.update(_nested_summary(inspected))
     for name in ("bundle_id", "version", "build", "profile_type",
                  "team_id", "profile_expires_at"):
         if not isinstance(result[name], str) or len(result[name]) > 128:
@@ -213,8 +274,16 @@ def sanitized_report(inspected: dict) -> dict:
     if (type(result["ad_hoc_device_count"]) is not int or
             not 0 <= result["ad_hoc_device_count"] <= 100000):
         raise WorkerError("UNSAFE_REPORT_METADATA")
-    if len(json.dumps(result, ensure_ascii=True).encode()) > 4096:
-        raise WorkerError("UNSAFE_REPORT_METADATA")
+    # The scan_report column is capped at 4096 bytes. Shed inventory detail
+    # (never the issue codes) until the report fits, and mark the truncation.
+    while len(json.dumps(result, ensure_ascii=True).encode()) > 4096:
+        if result["nested_components"]:
+            result["nested_components"].pop()
+            result["nested_components_truncated"] = True
+        elif result["unresolved_dylib_dependencies"]:
+            result["unresolved_dylib_dependencies"].pop()
+        else:
+            raise WorkerError("UNSAFE_REPORT_METADATA")
     return result
 
 

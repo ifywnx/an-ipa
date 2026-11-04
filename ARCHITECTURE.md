@@ -34,8 +34,10 @@ No IPA file, profile, private key, signing certificate or UDID is committed to G
 
 ## OTA
 
-Server only builds an OTA manifest when:
-1. Version/artifact are published, IPA checks completed, signature trust verified by independent verifier; license/distribution rights confirmed.
+Server only builds an OTA manifest when the dual release gate is open
+(`OTA_INSTALL_ENABLED` and `OTA_INSTALL_PIPELINE_READY`, both closed by
+default) **and**:
+1. Version/artifact are published through an implemented, published channel, IPA checks completed, signature trust verified by independent verifier; license/distribution rights confirmed.
 2. Device is approved and, for the selected Ad Hoc policy, **registered with Apple** and present in the verified embedded provisioning profile; profile/certificate unexpired; bundle ID and entitlements match.
 3. HTTPS IPA and HTTPS manifest are served from approved domains with short grant expiry; authorization is re-checked at grant time. Revocation of already-delivered URLs may not be immediate. A download/click is *not* evidence of installation.
 

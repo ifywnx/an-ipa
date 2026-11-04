@@ -43,6 +43,12 @@ Use LCSign locally on your own iPhone for each new signature; share only redacte
 - CI now executes synthetic malicious-archive and synthetic-CMS tests. This is *not* a web upload endpoint or trusted Apple code-sign verification.
 - `docs/IPA_INSPECTION.md` describes worker isolation, missing Apple trust chain and prohibited OTA approval from inspection alone.
 
+## Nested-code (dylib) inspection progress — 2026-11-05
+
+- Owner confirmed **every IPA on the store is a dylib-injected (tweaked) build**. The quarantine inspector now inventories all nested Mach-O components (main executable, `.dylib`, `.framework`, `.appex`), reads each embedded CodeDirectory Team ID claim, cross-checks nested signature presence/team consistency, and resolves dylib load references against the bundle (substrate/jailbreak paths and missing `@rpath` targets fail as `DYLIB_UNRESOLVED_DEPENDENCY`).
+- The sanitized scan report persists a bounded inventory for Admin review; the OTA policy denies with `NESTED_SIGNATURE_MISSING` / `NESTED_TEAM_MISMATCH` / `DYLIB_UNRESOLVED_DEPENDENCY` until a trusted verifier supplies the corresponding evidence.
+- These are embedded-metadata checks only: CodeDirectory hashes, CMS signatures and the Apple chain are still **not** verified. The trusted Apple verification blocker (macOS `codesign --verify` incl. nested code) remains open, and all release flags stay closed.
+
 ## Privacy/retention progress — 2026-11-03
 
 - Supabase migration `purge_expired_device_intake` applied; service-role-only RPC can purge expired guest enrollment and manually submitted UDID requests.
@@ -74,3 +80,22 @@ checks a confirmed, non-banned Admin, rejects publication fields, limits mutatio
 and prevents stale edits. Public catalog cannot read drafts or rights notes.
 Rollback integration tests pass for all of those paths. Publishing and IPA linking
 remain gated, with no manufactured signature/device evidence.
+
+## OTA eligibility continuation — 2026-11-05
+
+On local branch `codex/ota-eligibility` (not pushed, not part of PR #1 yet):
+expanded the existing Phase 5 domain policy rather than replacing it. Added a
+dual closed-by-default release gate, structured two-format UDID validation,
+separate device-identity verification, Ad Hoc channel/profile checks, Team and
+signing-certificate checks, grant/channel revocation and verifier-to-artifact
+SHA-256 binding. Manual UDID requests remain `pending_unverified` intake
+records and explicitly cannot become OTA evidence. See
+`docs/OTA_ELIGIBILITY.md`.
+
+This is code + unit tests only. No migration was added because the canonical
+device/version/channel schema lives in the existing Supabase project and the
+repository Phase 2 schema file is an obsolete no-op. No public manifest route,
+persistent grant issuer, upload/publish/OTA enablement, merge or production
+deployment was created. Trusted Apple verification, verified R2
+lifecycle/CORS, real IPA upload, supported device enrollment and physical
+iPhone OTA tests remain blockers.

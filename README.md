@@ -7,7 +7,7 @@ iPhone-first, public catalog for legally distributable iOS apps. The owner signs
 - Public app catalog, detail pages and premium `/udid` Safari guide.
 - Admin shell for signed IPA preflight on iPhone, UDID workflow and per-app versions. Private upload and admin mutations **not enabled**.
 - Guest enrollment challenge API and database: random one-time token, 8-minute expiry, atomic consumption, browser HttpOnly cookie, encrypted UDID and Ed25519 provider-signed attestation verification. **Profile download is disabled until a real Apple-compliant Profile Service CMS/SCEP verifier is connected and tested on an actual iPhone.**
-- Pure OTA manifest builder and denial tests. No public install/manifest endpoint or IPA download currently exists.
+- Pure OTA manifest builder and expanded denial tests, including a dual server release gate (`OTA_INSTALL_ENABLED` + `OTA_INSTALL_PIPELINE_READY`, both default `false`). No public install/manifest endpoint, persistent grant issuer or IPA download currently exists; see `docs/OTA_ELIGIBILITY.md`.
 - Supabase project `an-ipa-store` has current migrations `platform_core`, `privacy_requests`, `harden_phase2_access`, and `guest_enrollment_verified_provider_foundation`. All guest enrollment data is inaccessible directly to browser roles.
 - No production deployment approved. GitHub `main` unchanged; code under `codex/bootstrap-an-ipa-store` and PR #1.
 
