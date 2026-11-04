@@ -1,0 +1,3 @@
+-- Applied to the live Supabase project as a hotfix before CI. The preceding
+-- canonical migration already includes the corrected qualified column names.
+-- No additional changes are necessary when replayed from scratch.

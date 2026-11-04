@@ -1,29 +1,60 @@
-# Kiến trúc AN IPA STORE
+# Kiến trúc AN IPA STORE — LCSign on iPhone
 
-## Quyết định
+## Ranh giới trách nhiệm
 
-Next.js App Router + TypeScript phục vụ web và API. Business logic nằm trong `src/modules`, độc lập UI. Supabase PostgreSQL/Auth quản lý dữ liệu và danh tính; R2 private bucket lưu IPA. Chưa cấu hình dịch vụ ngoài ở bootstrap.
+- **LCSign trên iPhone của chủ cửa hàng**: ký IPA bằng chứng chỉ/provisioning profile hợp lệ mà chủ sở hữu quản lý. AN IPA STORE **không ký hoặc ký lại IPA**; không lấy, yêu cầu, lưu P12, mật khẩu chứng chỉ, private key hay Apple signing key.
+- **Admin mobile (iPhone Safari)**: tải IPA đã ký vào vùng lưu trữ riêng (quarantine), xem kết quả kiểm tra, quản lý nhiều app/build, UDID và danh sách phiên bản. Chỉ Admin được ghi; Auth/RBAC phải được xác minh server-side.
+- **IPA inspector**: quét cấu trúc ZIP theo giới hạn kích cỡ/tỷ lệ nén; đọc Info.plist (XML và binary), kiểm tra embedded.mobileprovision, expiration, Team ID, allowed UDIDs, bundle ID và entitlements. Đây là *phân tích metadata*, không phải kết luận chữ ký hợp lệ.
+- **Verifier độc lập**: xác minh chữ ký code của ứng dụng và profile chain/trust/entitlements bằng công cụ thích hợp trong worker biệt lập. Nếu chưa có verifier đáng tin cậy, artifact luôn ở `verification_pending`/blocked; không hiển thị nút cài đặt. Có thể dùng macOS **chỉ để xác minh** (không ký) nếu hạ tầng cho phép; không bắt buộc chủ cửa hàng dùng MacBook để ký.
+- **Public Store**: không cần login để duyệt ứng dụng. Cấp OTA sau khi backend xác minh đúng device, đúng IPA build/profile và grant ngắn hạn. Cấm dùng client-supplied `signatureVerified` hay `profileUdids` làm chứng cứ.
 
-## Ranh giới tin cậy
+## Chuỗi dữ liệu
 
-Browser chỉ dùng publishable key. Backend xác minh session và role từ nguồn tin cậy; không dùng user_metadata để phân quyền. Mỗi bảng public phải có RLS, quyền theo chủ sở hữu và kiểm thử truy cập chéo user. Admin không được tự nâng quyền từ client.
+```text
+LCSign (owner iPhone) --[signed IPA only]--> Admin mobile
+  --> authenticated resumable upload (quarantine/private object storage)
+  --> ZIP+plist inspection (untrusted)
+  --> independent signature+provisioning trust verification
+  --> approval of authorized distribution rights
+  --> App / AppVersion / Artifact verified and published
+  --> per-device entitlement check + time-bound install grant
+  --> HTTPS manifest.plist + short-lived HTTPS IPA URL
+  --> iOS itms-services:// download-manifest
+```
 
-IPA vào quarantine private qua upload hạn dung lượng. Worker sandbox kiểm tra ZIP traversal/bomb, Info.plist, hash, chữ ký, provisioning và entitlement. Kiểm tra chữ ký thực chạy trong macOS worker bằng công cụ Apple; Node không tự tuyên bố IPA hợp lệ. Chỉ artifact đã được worker xác minh mới đủ điều kiện xét xuất bản.
+No IPA file, profile, private key, signing certificate or UDID is committed to GitHub.
 
-Mỗi install request kiểm tra lại trạng thái thiết bị, Apple registration, quyền phân phối, profile expiry, UDID, bundle và entitlement. Signed URL ngắn hạn không đảm bảo thu hồi tức thì; cần TTL ngắn và vô hiệu grant khi revoke. Không coi click liên kết là cài đặt thành công.
+## Devices / UDID
 
-## Đăng ký thiết bị
+- Manual UDID: format-check only; mark `unverified` and request consent. Manual input is not proof of device possession, not equivalent to Apple registration.
+- Supported Apple profile service: requires TLS, informed consent, unique short-lived challenge, CMS verification against a trusted device chain, replay protection and verifiable device identity. Never fabricate a `.mobileconfig`, CMS callback or an automatic UDID. This feature remains **disabled** until end-to-end validation on real devices.
+- UDIDs are sensitive: envelope encryption, keyed lookup HMAC, masked display, retention/delete flow, rate limiting, no plaintext logs.
+- For Ad Hoc: Apple developer account device registration and regenerated provisioning profile are **separate** from collecting UDID. The owner imports updated profile into LCSign on iPhone and signs a *new IPA build*; previously signed files cannot gain devices merely by updating the website.
+- Purchased "one-year certificate" does not identify distribution type: check provisioning `ProvisionedDevices`, `ProvisionsAllDevices`, entitlements and actual issuer before enabling any channel. Never equate enterprise certificate with unrestricted public distribution.
 
-Ưu tiên enrollment sau khi xác nhận điều kiện Apple và cơ chế xác minh CMS/chứng thư. Không sinh mobileconfig hoặc callback giả. Fallback là hướng dẫn Finder; yêu cầu nhập thủ công phải ở trạng thái pending/unverified. Duyệt nội bộ khác với Apple registration. Hai trạng thái phải lưu riêng.
+## OTA
 
-## Tích hợp
+Server only builds an OTA manifest when:
+1. Version/artifact are published, IPA checks completed, signature trust verified by independent verifier; license/distribution rights confirmed.
+2. Device is approved and, for the selected Ad Hoc policy, **registered with Apple** and present in the verified embedded provisioning profile; profile/certificate unexpired; bundle ID and entitlements match.
+3. HTTPS IPA and HTTPS manifest are served from approved domains with short grant expiry; authorization is re-checked at grant time. Revocation of already-delivered URLs may not be immediate. A download/click is *not* evidence of installation.
 
-Apple adapter phải trả unavailable khi chưa có credentials. Signing key trong secret manager hoặc signing worker, không trong database thông thường. Vercel chỉ chạy web/API; không thực hiện ký IPA trong serverless request. Không chọn Supabase project khác chỉ vì tài khoản có quyền truy cập.
+For Enterprise/TestFlight/App Store, separate channel policies apply; no shortcut bypasses Apple terms or entitlement checks. The current implementation intentionally generates no public install grant.
 
-## Nguồn tham khảo
+## Infrastructure
 
-- https://nextjs.org/docs/app/getting-started/installation
-- https://supabase.com/docs/guides/database/postgres/row-level-security
-- https://developer.apple.com/documentation/appstoreconnectapi/devices
+Next.js/TypeScript storefront + admin, Supabase Auth/Postgres RLS for trusted metadata, R2 private bucket for IPA, out-of-band untrusted-file scanning and signature verification. Serverless request handlers do **not** sign IPA or run large untrusted archive processing. Keep `main` protected; no production deployment until all security gates pass.
 
-Xem `docs/DATA_MODEL.md` cho thiết kế dữ liệu và `docs/AUDIT.md` cho quyền truy cập.
+## References
+
+- https://developer.apple.com/help/account/provisioning-profiles/create-an-ad-hoc-provisioning-profile/
+- https://developer.apple.com/help/account/provisioning-profiles/edit-download-or-delete-profiles
+- https://developer.apple.com/library/archive/documentation/NetworkingInternet/Conceptual/iPhoneOTAConfiguration/profile-service/profile-service.html
+- https://developer.apple.com/documentation/technotes/tn3125-inside-code-signing-provisioning-profiles
+
+## Vercel worker (Phase 4)
+
+See [Vercel worker](docs/VERCEL_WORKER.md). Durable Workflow orchestrates temporary
+Sandbox microVMs. Only per-object signed GET URLs enter the parser environment;
+service credentials remain in Vercel Functions. Metadata success remains quarantined.
+Supabase owns scan/cleanup leases and retry budget. R2 lifecycle remains a release gate.

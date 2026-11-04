@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.env*
+*.ipa
+*.p12
+*.p8
+*.pem
+*.key
+*.mobileprovision

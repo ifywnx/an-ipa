@@ -1,0 +1,7 @@
+-- OBSOLETE DRAFT REMOVED. DO NOT APPLY.
+-- The dedicated Supabase project already contained platform_core and privacy_requests
+-- migrations before this repository's Phase 2 work. Their schema is not compatible
+-- with the prior proposed CREATE TABLE statements.
+-- Canonical historical migrations and new hardening migration are recorded in
+-- docs/SUPABASE_INTEGRATION.md and the live Supabase migration history.
+-- This no-op is retained so previously reviewed commits remain traceable.
