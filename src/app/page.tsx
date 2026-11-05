@@ -2,7 +2,7 @@ import Link from "next/link";
 import { AppCard } from "@/components/app-card";
 import { InstallFaq } from "@/components/install-guide";
 import { listPublicApps } from "@/modules/catalog/service";
-import { REGISTRATION_PACKAGES, formatVnd } from "@/modules/storefront/packages";
+import { CERTIFICATE_PACKAGES, REGISTRATION_PACKAGES, formatVnd } from "@/modules/storefront/packages";
 
 const TRUST_CHIPS = [
   "Ký thủ công cho từng thiết bị",
@@ -57,6 +57,40 @@ export default async function Home() {
         ))}
       </div>
       <p className="pricing-note">Mỗi gói áp dụng cho đúng 1 UDID. Chứng chỉ và hồ sơ ký có thể hết hạn hoặc bị Apple thu hồi ngoài ý muốn — cách cửa hàng xử lý trong từng trường hợp được ghi rõ ở trang <Link href="/policies/refund-warranty">đổi trả / bảo hành</Link>.</p>
+    </section>
+
+    <section className="pricing-section" id="goi-chung-chi" aria-labelledby="cert-title">
+      <p className="eyebrow">CHỌN GÓI CHỨNG CHỈ P12</p>
+      <h2 id="cert-title">Muốn tự ký app? Mua chứng chỉ, tự làm chủ</h2>
+      <p className="section-lead">Khác gói ở trên ở một điểm: ở đây bạn nhận file chứng chỉ P12 + hồ sơ ký theo UDID của mình, rồi tự ký bất kỳ file IPA nào bằng ứng dụng ký (LCSign, ESign...). Gói phân tầng theo thời gian bảo hành — bị Apple thu hồi trong hạn thì được cấp lại miễn phí.</p>
+      <div className="compare-grid">
+        <article className="compare-card">
+          <h3>Gói đăng ký thiết bị</h3>
+          <p>Cửa hàng ký sẵn mọi thứ. Bạn chỉ việc lấy UDID, chờ phát hành rồi cài qua liên kết. Hợp với người muốn cài là dùng, không đụng vào file.</p>
+          <Link className="minor-link" href="#goi-dang-ky">Xem các gói đăng ký ↑</Link>
+        </article>
+        <article className="compare-card">
+          <h3>Gói chứng chỉ P12</h3>
+          <p>Bạn cầm chứng chỉ và tự ký mọi file IPA bạn có. Hợp với người thích vọc, hay cài app ngoài kho của cửa hàng, hoặc ký cho nhiều bản khác nhau.</p>
+          <Link className="minor-link" href="#goi-chung-chi">Bạn đang xem mục này ↓</Link>
+        </article>
+      </div>
+      <div className="pricing-grid">
+        {CERTIFICATE_PACKAGES.map((pkg) => (
+          <article key={pkg.id} className={pkg.featured ? "price-card featured" : "price-card"}>
+            {pkg.badge ? <p className="price-badge">{pkg.badge}</p> : null}
+            <h3>{pkg.name}</h3>
+            <p className="price-duration">{pkg.warrantyLabel}</p>
+            <p className="price-value">{formatVnd(pkg.priceVnd)}</p>
+            <p className="price-tagline">{pkg.tagline}</p>
+            <ul className="price-features">
+              {pkg.features.map((feature) => <li key={feature}>{feature}</li>)}
+            </ul>
+            <Link className={pkg.featured ? "button price-cta" : "secondary-button price-cta"} href="/udid">Gửi UDID để cấp chứng chỉ</Link>
+          </article>
+        ))}
+      </div>
+      <p className="pricing-note">Chứng chỉ được cấp sau khi UDID của bạn đăng ký thành công, kèm mật khẩu mở file P12 lúc giao. Cửa hàng không bao giờ hỏi mật khẩu Apple ID hay mật khẩu riêng nào của bạn. Điều kiện bảo hành &amp; cấp lại được ghi rõ ở trang <Link href="/policies/refund-warranty">đổi trả / bảo hành</Link>.</p>
     </section>
 
     <section className="steps-section" aria-labelledby="steps-title">

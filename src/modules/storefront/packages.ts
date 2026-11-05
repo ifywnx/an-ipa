@@ -67,6 +67,78 @@ export const REGISTRATION_PACKAGES: RegistrationPackage[] = [
   },
 ];
 
+/**
+ * Certificate packages (P12 + provisioning profile) for customers who
+ * sign IPAs themselves with their own signing app (LCSign, ESign...).
+ * Tiers differ by WARRANTY length: if Apple revokes the certificate
+ * inside the warranty window, the store reissues it for free.
+ *
+ * OWNER ACTION REQUIRED before production: `priceVnd` values are
+ * PLACEHOLDERS for design review, and the supply route (wholesale
+ * reseller vs the store's own Apple Developer account) is not decided
+ * yet — the storefront copy deliberately promises nothing about supply
+ * timing beyond "issued after the UDID is registered".
+ */
+export interface CertificatePackage {
+  id: string;
+  name: string;
+  warrantyLabel: string;
+  priceVnd: number;
+  tagline: string;
+  featured?: boolean;
+  badge?: string;
+  features: string[];
+}
+
+export const CERTIFICATE_PACKAGES: CertificatePackage[] = [
+  {
+    id: "cert-30-ngay",
+    name: "Linh hoạt",
+    warrantyLabel: "Bảo hành 30 ngày",
+    priceVnd: 79000,
+    tagline: "Cho 1 thiết bị iPhone / iPad",
+    features: [
+      "File P12 + hồ sơ ký theo đúng UDID của bạn",
+      "Tự ký mọi file IPA bằng LCSign, ESign, Scarlet...",
+      "Bị Apple thu hồi trong 30 ngày: cấp lại miễn phí",
+      "Hướng dẫn nạp chứng chỉ vào ứng dụng ký",
+      "Hỗ trợ trực tiếp từ cửa hàng",
+    ],
+  },
+  {
+    id: "cert-90-ngay",
+    name: "Ổn định",
+    warrantyLabel: "Bảo hành 90 ngày",
+    priceVnd: 129000,
+    tagline: "Cho 1 thiết bị iPhone / iPad",
+    featured: true,
+    badge: "Được chọn nhiều nhất",
+    features: [
+      "File P12 + hồ sơ ký theo đúng UDID của bạn",
+      "Tự ký mọi file IPA bằng LCSign, ESign, Scarlet...",
+      "Bị Apple thu hồi trong 90 ngày: cấp lại miễn phí",
+      "Ưu tiên cấp lại khi xảy ra thu hồi hàng loạt",
+      "Hướng dẫn nạp chứng chỉ vào ứng dụng ký",
+      "Hỗ trợ trực tiếp từ cửa hàng",
+    ],
+  },
+  {
+    id: "cert-365-ngay",
+    name: "Lâu dài",
+    warrantyLabel: "Bảo hành 365 ngày",
+    priceVnd: 249000,
+    tagline: "Cho 1 thiết bị iPhone / iPad",
+    features: [
+      "File P12 + hồ sơ ký theo đúng UDID của bạn",
+      "Tự ký mọi file IPA bằng LCSign, ESign, Scarlet...",
+      "Bị Apple thu hồi trong 365 ngày: cấp lại miễn phí",
+      "Ưu tiên cao nhất khi xảy ra thu hồi hàng loạt",
+      "Được nhắc trước khi chứng chỉ sắp hết hạn",
+      "Hỗ trợ trực tiếp từ cửa hàng",
+    ],
+  },
+];
+
 export function formatVnd(value: number): string {
   return `${value.toLocaleString("vi-VN")}đ`;
 }
